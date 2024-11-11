@@ -75,7 +75,6 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
     func_load = lambda x: (x[0] - x[1]) * x[2]
     func_diff = lambda x: (x[0] - x[1])
     func_choice = lambda x: -1 if x[0] < 0 else 1
-    func_weight = lambda x: x[0] + net.z * x[1]  # decay term plus/minus degree term times subject parameter "z"
 
     with net:
         # external inputs
@@ -89,7 +88,7 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         net.obs = nengo.Ensemble(n_neurons, 1)
         net.decay = nengo.Ensemble(n_neurons, 1)
         net.degree = nengo.Ensemble(n_neurons, 1)
-        net.weight = nengo.Ensemble(2*n_neurons, 2, radius=2)
+        net.weight = nengo.Ensemble(4*n_neurons, 1, radius=2)
         net.combined = nengo.Ensemble(4*n_neurons, 4, radius=3)
         net.memory = nengo.Ensemble(n_neurons, 1)
         net.temp = nengo.Ensemble(n_neurons, 2)
@@ -99,12 +98,11 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         nengo.Connection(net.input_obs, net.obs)
         nengo.Connection(net.input_decay, net.decay)
         nengo.Connection(net.input_degree, net.degree)
-        nengo.Connection(net.decay, net.weight[0])
-        nengo.Connection(net.degree, net.weight[1])
+        nengo.Connection(net.decay, net.weight)  # decay term
+        nengo.Connection(net.degree, net.weight, transform=net.z)  # scaled connectivity term
         nengo.Connection(net.obs, net.combined[0])
         nengo.Connection(net.old, net.combined[1])
-        nengo.Connection(net.weight, net.combined[2], function=func_weight)
-        nengo.Connection(net.weight, net.weight_out, function=func_weight)
+        nengo.Connection(net.weight, net.combined[2])
         nengo.Connection(net.combined, net.memory, function=func_load, transform=syn_feedback)
         nengo.Connection(net.memory, net.memory, synapse=syn_feedback)
         nengo.Connection(net.memory, net.temp[0])
@@ -117,7 +115,7 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         # probes
         net.probe_input = nengo.Probe(net.input_obs, synapse=0.01)
         net.probe_obs = nengo.Probe(net.obs, synapse=0.01)
-        net.probe_weight = nengo.Probe(net.weight_out, synapse=0.01)
+        net.probe_weight = nengo.Probe(net.weight, synapse=0.01)
         net.probe_memory = nengo.Probe(net.memory, synapse=0.01)
         net.probe_old = nengo.Probe(net.old, synapse=0.01)
         net.probe_decision = nengo.Probe(net.decision, synapse=0.01)
