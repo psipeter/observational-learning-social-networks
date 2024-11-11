@@ -5,7 +5,6 @@ import subprocess
 ## Working Memory
 z = float(sys.argv[1])
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
-
 for sid in sids:
    make_string = f"python run.py WM {sid} {z}"
    with open (f'WM_{sid}.sh', 'w') as rsh:
@@ -18,7 +17,3 @@ for sid in sids:
       rsh.write('''#SBATCH --time=0:20:0''')
       rsh.write("\n")
       rsh.write(make_string)
-
-for sid in sids:
-   submit_string = ["sbatch", f"WM_{sid}.sh"]
-   a = subprocess.run(submit_string)
