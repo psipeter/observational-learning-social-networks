@@ -1,11 +1,14 @@
 import sys
 import pandas as pd
+import subprocess
 
+
+## Working Memory
 z = float(sys.argv[1])
-sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
+sids = pd.read_pickle("../data/behavior.pkl")['sid'].unique()
 
 for sid in sids:
-   string = f"python run.py WM {sid} {z}"
+   make_string = f"python run.py WM {sid} {z}"
    with open (f'WM_{sid}.sh', 'w') as rsh:
       rsh.write('''#!/bin/bash''')
       rsh.write("\n")
@@ -16,3 +19,7 @@ for sid in sids:
       rsh.write('''#SBATCH --time=0:20:0''')
       rsh.write("\n")
       rsh.write(string)
+
+for sid in sids:
+   submit_string = ["sbatch", f"{sid}.sh"]
+   a = subprocess.run(submit_string)
