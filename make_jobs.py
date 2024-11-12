@@ -10,6 +10,8 @@ for sid in sids:
    with open (f'wm_{sid}.sh', 'w') as rsh:
       rsh.write('''#!/bin/bash''')
       rsh.write("\n")
+      rsh.write('''#SBATCH --mem=8G''')
+      rsh.write("\n")
       rsh.write('''#SBATCH --nodes=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')

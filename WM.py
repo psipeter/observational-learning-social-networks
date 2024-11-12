@@ -121,9 +121,9 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         net.probe_decision = nengo.Probe(net.decision, synapse=0.01)
     return net
 
-def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
+def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True, cache=False):
     net = build_network_WM(env, seed_net=seed_net, z=z)
-    sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
+    sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar, cache=cache)
     with sim:
         sim.run(env.T, progress_bar=progress_bar)
     return net, sim
