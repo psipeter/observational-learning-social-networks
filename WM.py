@@ -65,6 +65,7 @@ class Environment():
 
 
 def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
+    nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
     func_obs = lambda t: env.sample(t)[0]
@@ -121,9 +122,9 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         net.probe_decision = nengo.Probe(net.decision, synapse=0.01)
     return net
 
-def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True, cache=False):
+def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
     net = build_network_WM(env, seed_net=seed_net, z=z)
-    sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar, cache=cache)
+    sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.T, progress_bar=progress_bar)
     return net, sim
