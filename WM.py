@@ -132,7 +132,7 @@ def run_WM(sid, z):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     
-    columns = ['type', 'sid', 'trial', 'stage', 'action']
+    columns = ['type', 'sid', 'trial', 'stage', 'action', 'z']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
@@ -145,9 +145,9 @@ def run_WM(sid, z):
             action_emp = 2*action_emp - 1  # converts [1,0] into [1,-1]
             action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
             # print(f"stage {stage}, emp {action_emp}, sim {action_sim}")
-            df = pd.DataFrame([['human', sid, trial, stage, action_emp]], columns=columns)
+            df = pd.DataFrame([['human', sid, trial, stage, action_emp, None]], columns=columns)
             dfs.append(df)
-            df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim]], columns=columns)
+            df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim, z]], columns=columns)
             dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)
     data.to_pickle(f"data/wm_sid{sid}.pkl")
