@@ -151,5 +151,5 @@ def run_WM(sid, z):
             df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim, error, z]], columns=columns)
             dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)
-    data.to_pickle(f"data/wm_sid{sid}.pkl")
+    data.to_pickle(f"data/wm_{sid}.pkl")
     return data

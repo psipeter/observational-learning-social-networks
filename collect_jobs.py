@@ -8,7 +8,7 @@ sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 dfs = []
 for sid in sids:
    try:
-      df = pd.read_pickle(f"data/wm_sid{sid}.pkl")
+      df = pd.read_pickle(f"data/wm_{sid}.pkl")
       dfs.append(df)
    except:
       print(f"sid {sid} missing")
