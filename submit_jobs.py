@@ -7,7 +7,9 @@ import time
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 for sid in sids:
    delete_string = ["rm", f"data/wm_{sid}.pkl"]
+   delete_string2 = ["rm", f"slurm-*"]
    submit_string = ["sbatch", f"wm_{sid}.sh"]
    a = subprocess.run(delete_string)
    b = subprocess.run(submit_string)
-   time.sleep(0.5)
+   c = subprocess.run(delete_string2)
+   # time.sleep(0.5)

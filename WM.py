@@ -151,6 +151,9 @@ def run_WM(sid, z):
             dfs.append(df)
             df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim, error, z]], columns=columns)
             dfs.append(df)
-    data = pd.concat(dfs, ignore_index=True)
-    data.to_pickle(f"data/wm_{sid}.pkl")
+        # export on the fly, to preserve partial data if remote job times out
+        data = pd.concat(dfs, ignore_index=True)
+        data.to_pickle(f"data/wm_{sid}.pkl")
+    # data = pd.concat(dfs, ignore_index=True)
+    # data.to_pickle(f"data/wm_{sid}.pkl")
     return data
