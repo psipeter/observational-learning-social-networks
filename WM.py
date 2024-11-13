@@ -135,7 +135,7 @@ def run_WM(sid, z, k):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     
-    columns = ['type', 'sid', 'trial', 'stage', 'action', 'error', 'z']
+    columns = ['type', 'sid', 'trial', 'stage', 'action', 'error', 'z', 'k']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
