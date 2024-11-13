@@ -31,7 +31,7 @@ class Environment():
             if stage==0:
                 color = self.empirical.query("stage==@stage")['color'].to_numpy()[0]
                 n_samples = 1
-                decay = 1 / n_samples
+                decay = 1
                 degree = 0
                 self.colors.extend(2*color-1 * np.ones((tt, 1)))
                 self.decays.extend(decay * np.ones((tt, 1)))
@@ -64,10 +64,11 @@ class Environment():
         return [self.colors[tidx], self.decays[tidx], self.degrees[tidx], self.inhibit1s[tidx], self.inhibit2s[tidx]]
 
 
-def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
+def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0, k=1):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
+    net.k = k
     func_obs = lambda t: env.sample(t)[0]
     func_decay = lambda t: env.sample(t)[1]
     func_degree = lambda t: env.sample(t)[2]
@@ -75,6 +76,7 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
     func_inh2 = lambda t: env.sample(t)[4]
     func_load = lambda x: (x[0] - x[1]) * x[2]
     func_diff = lambda x: (x[0] - x[1])
+    func_scale_decay = lambda x: np.abs(x[0])**net.k  # abs(x) avoids eval_points but with x<0
     func_choice = lambda x: -1 if x[0] < 0 else 1
 
     with net:
@@ -99,7 +101,7 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         nengo.Connection(net.input_obs, net.obs)
         nengo.Connection(net.input_decay, net.decay)
         nengo.Connection(net.input_degree, net.degree)
-        nengo.Connection(net.decay, net.weight)  # decay term
+        nengo.Connection(net.decay, net.weight, function=func_scale_decay)  # decay term
         nengo.Connection(net.degree, net.weight, transform=net.z)  # scaled connectivity term
         nengo.Connection(net.obs, net.combined[0])
         nengo.Connection(net.old, net.combined[1])
@@ -122,14 +124,14 @@ def build_network_WM(env, n_neurons=500, seed_net=0, syn_feedback=0.1, z=0):
         net.probe_decision = nengo.Probe(net.decision, synapse=0.01)
     return net
 
-def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_WM(env, seed_net=seed_net, z=z)
+def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_WM(env, seed_net=seed_net, z=z, k=k)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.T, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(sid, z):
+def run_WM(sid, z, k):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     
@@ -138,7 +140,7 @@ def run_WM(sid, z):
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(sid=sid, trial=trial)
-        net, sim = simulate_WM(env=env, seed_net=sid, z=z, progress_bar=False)
+        net, sim = simulate_WM(env=env, seed_net=sid, z=z, k=k, progress_bar=False)
         for stage in range(4):
             action_emp = empirical.query("trial==@trial and stage==@stage")['action'].to_numpy()[0]
             tidx = int((env.time_sample + stage*env.n_neighbors*env.time_sample)/env.dt)-2
@@ -147,9 +149,9 @@ def run_WM(sid, z):
             action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
             # print(f"stage {stage}, emp {action_emp}, sim {action_sim}")
             error = 1 if action_sim!=action_emp else 0
-            df = pd.DataFrame([['human', sid, trial, stage, action_emp, None, None]], columns=columns)
+            df = pd.DataFrame([['human', sid, trial, stage, action_emp, None, None, None]], columns=columns)
             dfs.append(df)
-            df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim, error, z]], columns=columns)
+            df = pd.DataFrame([['model-WM', sid, trial, stage, action_sim, error, z, k]], columns=columns)
             dfs.append(df)
         # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)

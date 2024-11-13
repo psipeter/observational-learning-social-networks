@@ -4,9 +4,10 @@ import subprocess
 
 ## Working Memory
 z = float(sys.argv[1])
+k = float(sys.argv[2])
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 for sid in sids:
-   make_string = f"python run.py WM {sid} {z}"
+   make_string = f"python run.py WM {sid} {z} {k}"
    with open (f'wm_{sid}.sh', 'w') as rsh:
       rsh.write('''#!/bin/bash''')
       rsh.write("\n")

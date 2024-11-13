@@ -11,4 +11,5 @@ sid = int(sys.argv[2])
 
 if model_type=='WM':
 	z = float(sys.argv[3])
-	data = run_WM(sid, z)
+	k = float(sys.argv[4])
+	data = run_WM(sid, z, k)
