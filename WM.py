@@ -131,7 +131,7 @@ def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
         sim.run(env.T, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(sid, z, k):
+def run_WM(sid, z, k, save=True):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     
@@ -155,7 +155,8 @@ def run_WM(sid, z, k):
             dfs.append(df)
         # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
-        data.to_pickle(f"data/wm_{sid}.pkl")
+        if save:
+            data.to_pickle(f"data/wm_{sid}.pkl")
     # data = pd.concat(dfs, ignore_index=True)
     # data.to_pickle(f"data/wm_{sid}.pkl")
     return data
