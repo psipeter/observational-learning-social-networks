@@ -5,8 +5,7 @@ import time
 
 ## Working Memory
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
-slurm_string = ["rm", f"*.out"]
-c = subprocess.run(slurm_string)
+c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:
    delete_string = ["rm", f"data/wm_{sid}.pkl"]
