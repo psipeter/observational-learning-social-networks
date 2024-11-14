@@ -115,7 +115,7 @@ def simulate_RL(env, z=0, k=1, learning_rate=1e-4, seed_sim=0, seed_net=0, progr
     return net, sim
 
 
-def run_RL(sid, z, k, learning_rate, save=False):
+def run_RL(sid, z, k, learning_rate, save=True):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'action', 'error', 'z', 'k', 'learning_rate']
