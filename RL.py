@@ -118,7 +118,7 @@ def simulate_RL(env, z=0, k=1, learning_rate=1e-4, seed_sim=0, seed_net=0, progr
 def run_RL(sid, z, k, learning_rate, save=True):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
-    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'action', 'estimate', 'error', 'z', 'k']
+    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'RD', 'action', 'estimate', 'error', 'z', 'k']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
@@ -134,16 +134,18 @@ def run_RL(sid, z, k, learning_rate, save=True):
             action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
             error = 1 if action_sim!=action_emp else 0
             observations = empirical.query("trial==@trial and stage==@stage")['color'].to_numpy()
+            RDs = empirical.query("trial==@trial and stage==@stage")['RD'].to_numpy()
             for o in range(len(observations)):
                 n_observations += 1
-                obs = observations[o]
+                obs = 2*observations[o] - 1
+                RD = RDs[o]
                 t0 = int((n_observations*env.time_sample)/env.dt)-100
                 t1 = int((n_observations*env.time_sample)/env.dt)-2
                 estimate = np.mean(sim.data[net.probe_prediction][t0:t1])
-            df = pd.DataFrame([['human', sid, trial, stage, obs, action_emp, None, None, None, None]], columns=columns)
-            dfs.append(df)
-            df = pd.DataFrame([['model-RL', sid, trial, stage, obs, action_sim, estimate, error, z, k]], columns=columns)
-            dfs.append(df)
+                df = pd.DataFrame([['human', sid, trial, stage, obs, RD, action_emp, None, None, None, None]], columns=columns)
+                dfs.append(df)
+                df = pd.DataFrame([['model-RL', sid, trial, stage, obs, RD, action_sim, estimate, error, z, k]], columns=columns)
+                dfs.append(df)
         # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
         if save:
