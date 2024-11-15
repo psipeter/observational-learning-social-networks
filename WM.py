@@ -134,7 +134,7 @@ def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
 def run_WM(sid, z, k, save=True):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
-    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'action', 'estimate', 'error', 'z', 'k']
+    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'RD', 'action', 'estimate', 'error', 'z', 'k']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
