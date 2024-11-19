@@ -19,13 +19,13 @@ def likelihood(param, model_type, sid):
         inv_temp = param[2]  # determines randomness in policy (passed to softmax)
     if model_type=='NEF-WM':
         inv_temp = param[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM'")
+        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
     if model_type=="NEF-RL":
         inv_temp = param[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL'")
+        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
     for trial in trials:
         for stage in stages:
-            if model_type=='NEF-WM' or model_type=="NEF-RL":
+            if model_type in ['NEF-WM', "NEF-RL"]:
                 expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
             else:
                 observations = data.query("trial==@trial & stage==@stage")['color'].to_numpy()
@@ -42,9 +42,10 @@ def likelihood(param, model_type, sid):
                         error = obs - expectation
                         expectation += learning_rate * error                
             act = data.query("trial==@trial & stage==@stage")['action'].unique()[0]
-            # print('stage', stage, 'expectation', expectation, 'action', act)
             prob = scipy.special.expit(inv_temp*expectation)
+            print('stage', stage, 'expectation', expectation, 'action', act, 'prob', prob)
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
+        raise
     return NLL
 
 def rerun(fitted, model_type, sid):
@@ -61,15 +62,15 @@ def rerun(fitted, model_type, sid):
         inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
     if model_type=='NEF-WM':
         inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM'")
+        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
     if model_type=="NEF-RL":
         inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL'")
+        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
     dfs = []
     columns = ['type', 'sid', 'trial', 'stage', 'color', 'estimate', 'prob']
     for trial in trials:
         for stage in stages:
-            if model_type=='NEF-WM' or model_type=="NEF-RL":
+            if model_type in ['NEF-WM', "NEF-RL"]:
                 observations = data.query("trial==@trial & stage==@stage")['color'].to_numpy()
                 expectations = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()
                 expectation = expectations[-1]
