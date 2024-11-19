@@ -2,13 +2,15 @@ import sys
 import pandas as pd
 import subprocess
 
-## Working Memory
 model_type = sys.argv[1]
 label = sys.argv[2]
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 dfs = []
+
 for sid in sids:
    try:
+      if model_type in ['NEF-WM', 'NEF-RL', 'RL1']:
+         df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
       if model_type=='WM':
          df = pd.read_pickle(f"data/wm_{sid}.pkl")
       if model_type=='RL':

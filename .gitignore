@@ -3,6 +3,7 @@ data/
 !data/behavior.pkl
 plots/
 *.sh
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
