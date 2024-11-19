@@ -1,6 +1,8 @@
 # data files and figures
 /data/
+!data/behavior.pkl
 /plots/
+*.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
