@@ -8,7 +8,7 @@ if model_type in ['NEF-WM', 'NEF-RL', 'RL1']:
    sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
    for sid in sids:
       make_string = f"python fit.py {model_type} {sid}"
-      with open (f'wm_{sid}.sh', 'w') as rsh:
+      with open (f'fit_{sid}.sh', 'w') as rsh:
          rsh.write('''#!/bin/bash''')
          rsh.write("\n")
          rsh.write('''#SBATCH --mem=8G''')
