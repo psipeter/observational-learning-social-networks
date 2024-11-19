@@ -1,7 +1,7 @@
 # data files and figures
-/data/
+data/
 !data/behavior.pkl
-/plots/
+plots/
 *.sh
 
 # Byte-compiled / optimized / DLL files
