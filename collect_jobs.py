@@ -10,10 +10,10 @@ dfs = []
 for sid in sids:
    try:
       if model_type in ['NEF-WM', 'NEF-RL', 'RL1', 'RL1rd', 'RL2', 'RL2rd']:
-            df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
-         if model_type in ['WM', 'RL']:
-            df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
-         dfs.append(df)
+         df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
+      if model_type in ['WM', 'RL']:
+         df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
+      dfs.append(df)
    except:
       print(f"sid {sid} missing")
 data = pd.concat(dfs, ignore_index=True)
