@@ -43,9 +43,8 @@ def likelihood(param, model_type, sid):
                         expectation += learning_rate * error                
             act = data.query("trial==@trial & stage==@stage")['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
-            print('stage', stage, 'expectation', expectation, 'action', act, 'prob', prob)
+            # print('stage', stage, 'expectation', expectation, 'action', act, 'prob', prob)
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
-        raise
     return NLL
 
 def rerun(fitted, model_type, sid):
@@ -102,11 +101,7 @@ def rerun(fitted, model_type, sid):
     rerun_data = pd.concat(dfs, ignore_index=True)
     return rerun_data
 
-if __name__ == '__main__':
-
-    model_type = sys.argv[1]
-    sid = int(sys.argv[2])
-
+def stat_fit(model_type, sid, save=True):
     dfs = []
     columns = ['type', 'sid', 'neg-log-likelihood', 'alpha', 'beta', 'inv-temp']
     if model_type=='NEF-WM':
@@ -142,4 +137,12 @@ if __name__ == '__main__':
         beta = params[1]
         inv_temp = params[2]
     fitted = pd.DataFrame([[model_type, sid, NLL, alpha, beta, inv_temp]], columns=columns)
-    fitted.to_pickle(f"data/{model_type}_{sid}.pkl")
+    if save:
+        fitted.to_pickle(f"data/{model_type}_{sid}.pkl")
+    return fitted
+
+if __name__ == '__main__':
+
+    model_type = sys.argv[1]
+    sid = int(sys.argv[2])
+    fitted = stat_fit(model_type, sid)
