@@ -10,110 +10,51 @@ def likelihood(param, model_type, sid):
     data = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = data['trial'].unique()
     stages = data['stage'].unique()
-    if model_type=='RL1':
+    if model_type in ['RL1', 'RL1rd']:
         alpha = param[0]  # learning rate for all stages
         inv_temp = param[1]  # determines randomness in policy (passed to softmax)
-    if model_type=='RL2':
+    if model_type in ['RL2', 'RL2rd']:
         alpha = param[0]  # learning rate for stage 1
         beta = param[1]  # learning rate for stages 2-3
         inv_temp = param[2]  # determines randomness in policy (passed to softmax)
-    if model_type=='NEF-WM':
+    if model_type in ['NEF-WM', 'NEF-RL']:
         inv_temp = param[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
-    if model_type=="NEF-RL":
-        inv_temp = param[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
+        datafile = "WM_z05k12" if model_type=='NEF-WM' else "RL_z05k12"
+        nef_data = pd.read_pickle(f"data/{datafile}.pkl").query("type!='human' & sid==@sid")
     for trial in trials:
         for stage in stages:
+            subdata = data.query("trial==@trial & stage==@stage")
             if model_type in ['NEF-WM', "NEF-RL"]:
-                expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
+                nef_subdata = nef_data.query("trial==@trial & stage==@stage")
+                expectation = nef_subdata['estimate'].to_numpy()[-1]
             else:
-                observations = data.query("trial==@trial & stage==@stage")['color'].to_numpy()
+                observations = subdata['color'].to_numpy()
+                RDs = subdata['RD'].to_numpy()
                 if stage==0:
                     expectation = observations[0]
-                elif stage==1:
-                    learning_rate = alpha
-                    for obs in observations:
-                        error = obs - expectation
-                        expectation += learning_rate * error
                 else:
-                    learning_rate = alpha if model_type=='RL1' else beta
-                    for obs in observations:
+                    learning_rate = beta if (model_type in ['RL2', 'RL2rd'] and stage>1) else alpha
+                    for n in range(len(observations)):
+                        obs = observations[n]
+                        RD = RDs[n] if model_type in ['RL1rd', 'RL2rd'] else 1
                         error = obs - expectation
-                        expectation += learning_rate * error                
-            act = data.query("trial==@trial & stage==@stage")['action'].unique()[0]
+                        expectation += RD * learning_rate * error               
+            act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print('stage', stage, 'expectation', expectation, 'action', act, 'prob', prob)
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def rerun(fitted, model_type, sid):
-    data = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
-    params = fitted.query("type==@model_type & sid==@sid")
-    trials = data['trial'].unique()
-    stages = data['stage'].unique()
-    if model_type=='RL1':
-        alpha = params['alpha'].unique()[0]  # learning rate for all stages
-        inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-    if model_type=='RL2':
-        alpha = params['alpha'].unique()[0]  # learning rate for stage 1
-        beta = params['beta'].unique()[0]  # learning rate for stages 2-3
-        inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-    if model_type=='NEF-WM':
-        inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
-    if model_type=="NEF-RL":
-        inv_temp = params['inv-temp'].unique()[0]  # determines randomness in policy (passed to softmax)
-        nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
-    dfs = []
-    columns = ['type', 'sid', 'trial', 'stage', 'color', 'estimate', 'prob']
-    for trial in trials:
-        for stage in stages:
-            if model_type in ['NEF-WM', "NEF-RL"]:
-                observations = data.query("trial==@trial & stage==@stage")['color'].to_numpy()
-                expectations = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()
-                expectation = expectations[-1]
-            else:
-                observations = data.query("trial==@trial & stage==@stage")['color'].to_numpy()
-                expectations = []
-                if stage==0:
-                    expectation = observations[0]
-                    expectations.append(expectation.copy())
-                elif stage==1:
-                    learning_rate = alpha
-                    for obs in observations:
-                        error = obs - expectation
-                        expectation += learning_rate * error
-                        expectations.append(expectation.copy())
-                else:
-                    learning_rate = alpha if model_type=='RL1' else beta
-                    for obs in observations:
-                        error = obs - expectation
-                        expectation += learning_rate * error
-                        expectations.append(expectation.copy())
-            prob = scipy.special.expit(inv_temp*expectation)  # only record prob at end of each stage (not for each obs)
-            # print(observations, expectations)
-            for i in range(len(observations)):
-                E = expectations[i]
-                O = observations[i]
-                df = pd.DataFrame([[model_type, sid, trial, stage, O, E, prob]], columns=columns)
-                dfs.append(df)
-    rerun_data = pd.concat(dfs, ignore_index=True)
-    return rerun_data
-
 def stat_fit(model_type, sid, save=True):
     dfs = []
     columns = ['type', 'sid', 'neg-log-likelihood', 'alpha', 'beta', 'inv-temp']
-    if model_type=='NEF-WM':
+    if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [10]
         bounds = [(0,50)]
-    if model_type=='NEF-RL':
-        param0 = [10]
-        bounds = [(0,50)]
-    if model_type=='RL1':
+    if model_type in ['RL1', 'RL1rd']:
         param0 = [0.1, 10]
         bounds = [(0,1), (0,50)]
-    elif model_type=='RL2':
+    if model_type in ['RL2', 'RL2rd']:
         param0 = [0.1, 0.1, 10]
         bounds = [(0,1), (0,1), (0,50)]
     result = scipy.optimize.minimize(
@@ -128,11 +69,11 @@ def stat_fit(model_type, sid, save=True):
         alpha = None
         beta = None
         inv_temp = params[0]
-    if model_type=='RL1':
+    if model_type in ['RL1', 'RL1rd']:
         alpha = params[0]
         beta = None
         inv_temp = params[1]
-    elif model_type=='RL2':
+    if model_type in ['RL2', 'RL2rd']:
         alpha = params[0]
         beta = params[1]
         inv_temp = params[2]

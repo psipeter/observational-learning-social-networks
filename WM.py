@@ -142,14 +142,15 @@ def run_WM(sid, z, k, save=True):
         net, sim = simulate_WM(env=env, seed_net=sid, z=z, k=k, progress_bar=False)
         n_observations = 0
         for stage in range(4):
-            action_emp = empirical.query("trial==@trial and stage==@stage")['action'].to_numpy()[0]
+            subdata = empirical.query("trial==@trial and stage==@stage")
+            action_emp = subdata['action'].to_numpy()[0]
             tidx = int((env.time_sample + stage*env.n_neighbors*env.time_sample)/env.dt)-2
             action_sim = sim.data[net.probe_decision][tidx][0]
             action_emp = 2*action_emp - 1  # converts [1,0] into [1,-1]
             action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
             error = 1 if action_sim!=action_emp else 0
-            observations = empirical.query("trial==@trial and stage==@stage")['color'].to_numpy()
-            RDs = empirical.query("trial==@trial and stage==@stage")['RD'].to_numpy()
+            observations = subdata['color'].to_numpy()
+            RDs = subdata['RD'].to_numpy()
             for o in range(len(observations)):
                 n_observations += 1
                 obs = 2*observations[o] - 1
