@@ -165,7 +165,7 @@ def run_WM(sid, z, k, save=True):
         # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
         if save:
-            data.to_pickle(f"data/wm_{sid}.pkl")
+            data.to_pickle(f"data/WM_{sid}.pkl")
     # data = pd.concat(dfs, ignore_index=True)
     # data.to_pickle(f"data/wm_{sid}.pkl")
     return data

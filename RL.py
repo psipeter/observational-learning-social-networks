@@ -150,7 +150,7 @@ def run_RL(sid, z, k, learning_rate=5e-5, save=True):
         # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
         if save:
-            data.to_pickle(f"data/rl_{sid}.pkl")
+            data.to_pickle(f"data/RL_{sid}.pkl")
     # data = pd.concat(dfs, ignore_index=True)
     # data.to_pickle(f"data/rl_{sid}.pkl")
     return data
