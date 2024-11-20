@@ -38,6 +38,7 @@ def likelihood(param, model_type, sid):
                         obs = observations[n]
                         RD = RDs[n] if (model_type in ['RL1rd', 'RL2rd'] and stage>1) else 1
                         error = obs - expectation
+                        LR = np.clip(RD*learning_rate, 0, 1)
                         expectation += RD * learning_rate * error               
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
@@ -51,12 +52,24 @@ def stat_fit(model_type, sid, save=True):
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [10.0]
         bounds = [(0,100)]
-    if model_type in ['RL1', 'RL1rd']:
+    if model_type == 'RL1':
         param0 = [0.1, 10]
         bounds = [(0,1), (0,100)]
-    if model_type in ['RL2', 'RL2rd']:
-        param0 = [0.1, 0.1, 10.0]
+    if model_type == 'RL1rd':
+        param0 = [0.5, 10]
+        bounds = [(0,10), (0,100)]
+    if model_type == 'RL2':
+        param0 = [0.1, 0.1, 10]
         bounds = [(0,1), (0,1), (0,100)]
+    if model_type == 'RL2rd':
+        param0 = [0.5, 0.5, 10]
+        bounds = [(0,10), (0,10), (0,100)]
+    # if model_type in ['RL1', 'RL1rd']:
+    #     param0 = [0.1, 10]
+    #     bounds = [(0,1), (0,100)]
+    # if model_type in ['RL2', 'RL2rd']:
+    #     param0 = [0.1, 0.1, 10.0]
+    #     bounds = [(0,1), (0,1), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
