@@ -41,7 +41,7 @@ def likelihood(param, model_type, sid):
                         expectation += RD * learning_rate * error               
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
-            # print('stage', stage, 'expectation', expectation, 'action', act, 'prob', prob)
+            # print(f'stage {stage}, expectation {expectation:.4}, action {act},alpha {alpha:.3}, inv-temp {inv_temp:.3}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
