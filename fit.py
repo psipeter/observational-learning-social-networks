@@ -39,7 +39,7 @@ def likelihood(param, model_type, sid):
                         RD = RDs[n] if (model_type in ['RL1rd', 'RL2rd'] and stage>1) else 1
                         error = obs - expectation
                         LR = np.clip(RD*learning_rate, 0, 1)
-                        expectation += RD * learning_rate * error               
+                        expectation += LR * error               
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'stage {stage}, expectation {expectation}, action {act}, alpha {alpha}, inv-temp {inv_temp}, prob {prob}')
