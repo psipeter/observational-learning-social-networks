@@ -36,7 +36,7 @@ def likelihood(param, model_type, sid):
                     learning_rate = beta if (model_type in ['RL2', 'RL2rd'] and stage>1) else alpha
                     for n in range(len(observations)):
                         obs = observations[n]
-                        RD = RDs[n] if model_type in ['RL1rd', 'RL2rd'] else 1
+                        RD = RDs[n] if (model_type in ['RL1rd', 'RL2rd'] and stage>1) else 1
                         error = obs - expectation
                         expectation += RD * learning_rate * error               
             act = subdata['action'].unique()[0]
@@ -53,10 +53,10 @@ def stat_fit(model_type, sid, save=True):
         bounds = [(0,50)]
     if model_type in ['RL1', 'RL1rd']:
         param0 = [0.1, 10]
-        bounds = [(0,1), (0,50)]
+        bounds = [(0,10), (0,50)]
     if model_type in ['RL2', 'RL2rd']:
         param0 = [0.1, 0.1, 10]
-        bounds = [(0,1), (0,1), (0,50)]
+        bounds = [(0,10), (0,10), (0,50)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
