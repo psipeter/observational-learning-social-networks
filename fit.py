@@ -41,7 +41,7 @@ def likelihood(param, model_type, sid):
                         expectation += RD * learning_rate * error               
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
-            # print(f'stage {stage}, expectation {expectation:.4}, action {act},alpha {alpha:.3}, inv-temp {inv_temp:.3}, prob {prob}')
+            # print(f'stage {stage}, expectation {expectation}, action {act}, alpha {alpha}, inv-temp {inv_temp}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
@@ -50,13 +50,13 @@ def stat_fit(model_type, sid, save=True):
     columns = ['type', 'sid', 'neg-log-likelihood', 'alpha', 'beta', 'inv-temp']
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [10.0]
-        bounds = [(0.001,50.0)]
+        bounds = [(0,100)]
     if model_type in ['RL1', 'RL1rd']:
         param0 = [0.1, 10]
-        bounds = [(0.0,10.0), (0.001,50.0)]
+        bounds = [(0,1), (0,100)]
     if model_type in ['RL2', 'RL2rd']:
         param0 = [0.1, 0.1, 10.0]
-        bounds = [(0.0,10.0), (0.0,10.0), (0.001,50.0)]
+        bounds = [(0,1), (0,1), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
