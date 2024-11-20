@@ -29,6 +29,7 @@ def likelihood(param, model_type, sid):
                 expectation = nef_subdata['estimate'].to_numpy()[-1]
             else:
                 observations = subdata['color'].to_numpy()
+                observations = 2*observations - np.ones_like(observations)
                 RDs = subdata['RD'].to_numpy()
                 if stage==0:
                     expectation = observations[0]
@@ -40,6 +41,7 @@ def likelihood(param, model_type, sid):
                         error = obs - expectation
                         LR = np.clip(RD*learning_rate, 0, 1)
                         expectation += LR * error               
+                        # print(f"trial {trial}, stage {stage}, obs {obs}, RD {RD}")
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'stage {stage}, expectation {expectation}, action {act}, alpha {alpha}, inv-temp {inv_temp}, prob {prob}')
@@ -50,19 +52,19 @@ def stat_fit(model_type, sid, save=True):
     dfs = []
     columns = ['type', 'sid', 'neg-log-likelihood', 'alpha', 'beta', 'inv-temp']
     if model_type in ['NEF-WM', 'NEF-RL']:
-        param0 = [10.0]
+        param0 = [1.0]
         bounds = [(0,100)]
     if model_type == 'RL1':
-        param0 = [0.1, 10]
+        param0 = [0.1, 1.0]
         bounds = [(0,1), (0,100)]
     if model_type == 'RL1rd':
-        param0 = [0.5, 10]
+        param0 = [0.5, 1.0]
         bounds = [(0,10), (0,100)]
     if model_type == 'RL2':
-        param0 = [0.1, 0.1, 10]
+        param0 = [0.1, 0.1, 1.0]
         bounds = [(0,1), (0,1), (0,100)]
     if model_type == 'RL2rd':
-        param0 = [0.5, 0.5, 10]
+        param0 = [0.5, 0.5, 1.0]
         bounds = [(0,10), (0,10), (0,100)]
     # if model_type in ['RL1', 'RL1rd']:
     #     param0 = [0.1, 10]
