@@ -8,7 +8,7 @@ c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:
    if model_type in ['NEF-WM', 'NEF-RL', 'RL1', 'RL1rd', 'RL2', 'RL2rd', 'ZK']:
-      delete_string = ["rm", f"data/{model_type}_{sid}.pkl"]
+      delete_string = ["rm", f"data/{model_type}_{sid}.pkl", f"data/{model_type}_{sid}.npz"]
       submit_string = ["sbatch", f"fit_{sid}.sh"]
    if model_type in ['WM', 'RL']:
       delete_string = ["rm", f"data/{model_type}_{sid}.pkl"]
