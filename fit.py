@@ -50,13 +50,13 @@ def stat_fit(model_type, sid, save=True):
     columns = ['type', 'sid', 'neg-log-likelihood', 'alpha', 'beta', 'inv-temp']
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [10]
-        bounds = [(0,50)]
+        bounds = [(0.001,50)]
     if model_type in ['RL1', 'RL1rd']:
         param0 = [0.1, 10]
-        bounds = [(0,10), (0,50)]
+        bounds = [(0,10), (0.001,50)]
     if model_type in ['RL2', 'RL2rd']:
         param0 = [0.1, 0.1, 10]
-        bounds = [(0,10), (0,10), (0,50)]
+        bounds = [(0,10), (0,10), (0.001,50)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
