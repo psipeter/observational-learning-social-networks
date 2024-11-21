@@ -83,11 +83,10 @@ def likelihood(param, model_type, sid):
                     RDs = history['RD'].to_numpy()
                     if model_type=='DGrd':
                         s0, s1, s2, s3 = 1, 1, 1, 1
-                    RD0 = 1
                     for n in range(len(obs_history)):
                         if 0 <= n < 1:
-                            # weights.append(s0)   # do NOT factor in RD at stage 0
-                            weights.append(s0*RD0)  # DO factor in RD at stage 0
+                            weights.append(s0*1)   # do NOT factor in RD at stage 0
+                            # weights.append(s0*RDs[n])  # DO factor in RD at stage 0
                         if 1 <= n < 1+n_neighbors:
                             # weights.append(s1)  # do NOT factor in RD at stage 1
                             weights.append(s1*RDs[n])  # DO factor in RD at stage 1
@@ -134,7 +133,7 @@ def stat_fit(model_type, sid, save=True):
         param0 = [1.0]
         bounds = [(0,100)]
     if model_type == 'DGrds':
-        param0 = [0.1, 0.1, 0.5, 0.9, 1.0]
+        param0 = [0.5, 0.5, 0.5, 0.5, 10]
         bounds = [(0,1), (0,1), (0,1), (0,1), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
