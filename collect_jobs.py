@@ -9,7 +9,7 @@ dfs = []
 
 for sid in sids:
    try:
-      if model_type in ['NEF-WM', 'NEF-RL', 'RL1', 'RL1rd', 'RL2', 'RL2rd', 'ZK', 'DG']:
+      if model_type in ['NEF-WM', 'NEF-RL', 'RL1', 'RL1rd', 'RL2', 'RL2rd', 'ZK', 'DGn', 'DGrd', 'DGrds']:
          df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
       if model_type in ['WM', 'RL']:
          df = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
