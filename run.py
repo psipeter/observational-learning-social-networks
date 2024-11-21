@@ -18,5 +18,6 @@ if model_type=='WM':
 if model_type=='RL':
 	z = float(sys.argv[3])
 	k = float(sys.argv[4])
-	learning_rate = float(sys.argv[5])
-	data = run_RL(sid, z, k, learning_rate)
+	data = run_RL(sid, z, k)
+	# learning_rate = float(sys.argv[5])
+	# data = run_RL(sid, z, k, learning_rate)
