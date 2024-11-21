@@ -16,15 +16,18 @@ def likelihood(param, model_type, sid):
     if model_type in ['RL2', 'RL2rd']:
         alpha = param[0]  # learning rate for stage 1
         beta = param[1]  # learning rate for stages 2-3
-        inv_temp = param[2]  # determines randomness in policy (passed to softmax)
+        inv_temp = param[2]
     if model_type in ['ZK']:
         z = param[0]
         k = param[1]
         inv_temp = param[2]
     if model_type in ['NEF-WM', 'NEF-RL']:
-        inv_temp = param[0]  # determines randomness in policy (passed to softmax)
+        inv_temp = param[0]
         datafile = "WM_z05k12" if model_type=='NEF-WM' else "RL_z05k12"
         nef_data = pd.read_pickle(f"data/{datafile}.pkl").query("type!='human' & sid==@sid")
+    if model_type in ['DG']:
+        inv_temp = param[0]
+
     for trial in trials:
         n_samples = 0
         expectation = 0
@@ -63,6 +66,17 @@ def likelihood(param, model_type, sid):
                     weight = np.clip(weight, 0, 1)
                     # print(decay, RD, z, k, weight)
                     expectation += weight * error                 
+            elif model_type in ['DG']:
+                history = data.query("trial==@trial & stage<=@stage")
+                obs_history = history['color'].to_numpy()
+                obs_history = 2*obs_history - np.ones_like(obs_history)
+                rd_history = history['RD'].to_numpy()
+                s1 = len(data.query("trial==@trial & stage==1")['RD'].to_numpy())
+                rd_history[0] = 1  # personal observation is considered perfect
+                rd_history[1:s1+1] = 1  # social observations in stage 1 don't consider degree
+                n_samples = len(obs_history)
+                expectation = np.sum(obs_history*rd_history) / n_samples            
+                # print(stage, rd_history, obs_history, expectation)
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'stage {stage}, expectation {expectation}, action {act}, prob {prob}')
@@ -71,7 +85,7 @@ def likelihood(param, model_type, sid):
 
 def stat_fit(model_type, sid, save=True):
     dfs = []
-    columns = ['type', 'sid', 'NLL']
+    columns = ['type', 'sid', 'NLL', 'McFadden R2']
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [1.0]
         bounds = [(0,100)]
@@ -90,6 +104,9 @@ def stat_fit(model_type, sid, save=True):
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,100)]
+    if model_type == 'DG':
+        param0 = [1.0]
+        bounds = [(0,100)]
     # if model_type in ['RL1', 'RL1rd']:
     #     param0 = [0.1, 10]
     #     bounds = [(0,1), (0,100)]
@@ -103,8 +120,20 @@ def stat_fit(model_type, sid, save=True):
         bounds=bounds,
         options={'disp':False})
     NLL = result.fun
+    # compute McFadden R2
+    null_log_likelihood = 0
+    subdata = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
+    for trial in subdata['trial'].unique():
+        for stage in subdata.query("trial==@trial")['stage'].unique():
+            expectation = 0
+            act = subdata.query("trial==@trial & stage==@stage")['action'].unique()[0]
+            prob = scipy.special.expit(expectation)
+            null_log_likelihood -= np.log(prob) if act==1 else np.log(1-prob)
+    mcfadden_r2 = 1 - NLL/null_log_likelihood
+    # n_trials = len(subdata['trial'].unique()) * len(subdata['stage'].unique())
+    # mcfadden_r2 = 1 - NLL/(n_trials*np.log(0.5))
     fitted_params = result.x
-    fitted_data = pd.DataFrame([[model_type, sid, NLL]], columns=columns)
+    fitted_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=columns)
     if save:
         fitted_data.to_pickle(f"data/{model_type}_{sid}.pkl")
         np.savez(f"data/{model_type}_{sid}.npz", fitted_params)
