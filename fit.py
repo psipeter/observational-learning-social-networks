@@ -25,9 +25,14 @@ def likelihood(param, model_type, sid):
         inv_temp = param[0]
         datafile = "WM_z05k12" if model_type=='NEF-WM' else "RL_z05k12"
         nef_data = pd.read_pickle(f"data/{datafile}.pkl").query("type!='human' & sid==@sid")
-    if model_type in ['DG']:
+    if model_type in ['DGn', 'DGrd']:
         inv_temp = param[0]
-
+    if model_type in ['DGrds']:
+        s0 = param[0]
+        s1 = param[1]
+        s2 = param[2]
+        s3 = param[3]
+        inv_temp = param[1]
     for trial in trials:
         n_samples = 0
         expectation = 0
@@ -64,22 +69,40 @@ def likelihood(param, model_type, sid):
                     error = obs - expectation
                     weight = decay**k + z*RD
                     weight = np.clip(weight, 0, 1)
-                    # print(decay, RD, z, k, weight)
                     expectation += weight * error                 
-            elif model_type in ['DG']:
+            elif model_type in ['DGn', 'DGrd', 'DGrds']:
                 history = data.query("trial==@trial & stage<=@stage")
                 obs_history = history['color'].to_numpy()
                 obs_history = 2*obs_history - np.ones_like(obs_history)
-                rd_history = history['RD'].to_numpy()
-                s1 = len(data.query("trial==@trial & stage==1")['RD'].to_numpy())
-                rd_history[0] = 1  # personal observation is considered perfect
-                rd_history[1:s1+1] = 1  # social observations in stage 1 don't consider degree
-                n_samples = len(obs_history)
-                expectation = np.sum(obs_history*rd_history) / n_samples            
-                # print(stage, rd_history, obs_history, expectation)
+                n_neighbors = len(subdata['color'].to_numpy())
+                if model_type=='DGn':
+                    weights = np.ones_like(obs_history)                    
+                    expectation = np.mean(weights*obs_history)
+                elif model_type in ['DGrd', 'DGrds']:
+                    weights = []
+                    RDs = history['RD'].to_numpy()
+                    if model_type=='DGrd':
+                        s0, s1, s2, s3 = 1, 1, 1, 1
+                    RD0 = 1
+                    for n in range(len(obs_history)):
+                        if 0 <= n < 1:
+                            # weights.append(s0)   # do NOT factor in RD at stage 0
+                            weights.append(s0*RD0)  # DO factor in RD at stage 0
+                        if 1 <= n < 1+n_neighbors:
+                            # weights.append(s1)  # do NOT factor in RD at stage 1
+                            weights.append(s1*RDs[n])  # DO factor in RD at stage 1
+                        if 1+n_neighbors <= n < 2*n_neighbors+1:
+                            weights.append(s2*RDs[n])
+                        if 1+2*n_neighbors <= n < 3*n_neighbors+1:
+                            weights.append(s3*RDs[n])
+                    # weights = np.clip(weights, 0, 1)
+                    weights = np.array(weights)
+                    # expectation = np.sum(weights*obs_history)
+                    expectation = np.mean(weights*obs_history)
+                # print(stage, weights)
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
-            # print(f'stage {stage}, expectation {expectation}, action {act}, prob {prob}')
+            # print(f'trial {trial}, stage {stage}, expectation {expectation}, action {act}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
@@ -104,15 +127,15 @@ def stat_fit(model_type, sid, save=True):
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,100)]
-    if model_type == 'DG':
+    if model_type == 'DGn':
         param0 = [1.0]
         bounds = [(0,100)]
-    # if model_type in ['RL1', 'RL1rd']:
-    #     param0 = [0.1, 10]
-    #     bounds = [(0,1), (0,100)]
-    # if model_type in ['RL2', 'RL2rd']:
-    #     param0 = [0.1, 0.1, 10.0]
-    #     bounds = [(0,1), (0,1), (0,100)]
+    if model_type == 'DGrd':
+        param0 = [1.0]
+        bounds = [(0,100)]
+    if model_type == 'DGrds':
+        param0 = [0.1, 0.1, 0.5, 0.9, 1.0]
+        bounds = [(0,1), (0,1), (0,1), (0,1), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
