@@ -28,11 +28,11 @@ def likelihood(param, model_type, sid):
     if model_type in ['DGn', 'DGrd']:
         inv_temp = param[0]
     if model_type in ['DGrds']:
-        s0 = param[0]
-        s1 = param[1]
-        s2 = param[2]
-        s3 = param[3]
-        inv_temp = param[1]
+        # s0 = param[0]
+        # s1 = param[1]
+        s2 = param[0]
+        s3 = param[1]
+        inv_temp = param[2]
     for trial in trials:
         n_samples = 0
         expectation = 0
@@ -81,17 +81,15 @@ def likelihood(param, model_type, sid):
                 elif model_type in ['DGrd', 'DGrds']:
                     weights = []
                     RDs = history['RD'].to_numpy()
+                    w_avg = 1 / len(obs_history)
                     if model_type=='DGrd':
-                        s0 = 1 / len(obs_history)
-                        s1 = 1 / len(obs_history)
-                        s2 = 1
-                        s3 = 1
+                        s2, s3 = 1, 1
                     for n in range(len(obs_history)):
                         if 0 <= n < 1:
-                            weights.append(s0)   # do NOT factor in RD at stage 0
+                            weights.append(w_avg)   # do NOT factor in RD at stage 0
                             # weights.append(s0*RDs[n])  # DO factor in RD at stage 0
                         if 1 <= n < 1+n_neighbors:
-                            weights.append(s1)  # do NOT factor in RD at stage 1
+                            weights.append(w_avg)  # do NOT factor in RD at stage 1
                             # weights.append(s1*RDs[n])  # DO factor in RD at stage 1
                         if 1+n_neighbors <= n < 2*n_neighbors+1:
                             weights.append(s2*RDs[n])
@@ -136,8 +134,11 @@ def stat_fit(model_type, sid, save=True):
         param0 = [1.0]
         bounds = [(0,100)]
     if model_type == 'DGrds':
-        param0 = [0.5, 0.5, 0.5, 0.5, 10]
-        bounds = [(0,1), (0,1), (0,1), (0,1), (0,100)]
+        param0 = [0.5, 0.5, 10]
+        bounds = [(0,1), (0,1), (0,100)]
+    # if model_type == 'DGrds':
+    #     param0 = [0.5, 0.5, 0.5, 0.5, 10]
+    #     bounds = [(0,1), (0,1), (0,1), (0,1), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
