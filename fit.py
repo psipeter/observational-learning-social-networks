@@ -82,22 +82,25 @@ def likelihood(param, model_type, sid):
                     weights = []
                     RDs = history['RD'].to_numpy()
                     if model_type=='DGrd':
-                        s0, s1, s2, s3 = 1, 1, 1, 1
+                        s0 = 1 / len(obs_history)
+                        s1 = 1 / len(obs_history)
+                        s2 = 1
+                        s3 = 1
                     for n in range(len(obs_history)):
                         if 0 <= n < 1:
-                            weights.append(s0*1)   # do NOT factor in RD at stage 0
+                            weights.append(s0)   # do NOT factor in RD at stage 0
                             # weights.append(s0*RDs[n])  # DO factor in RD at stage 0
                         if 1 <= n < 1+n_neighbors:
-                            # weights.append(s1)  # do NOT factor in RD at stage 1
-                            weights.append(s1*RDs[n])  # DO factor in RD at stage 1
+                            weights.append(s1)  # do NOT factor in RD at stage 1
+                            # weights.append(s1*RDs[n])  # DO factor in RD at stage 1
                         if 1+n_neighbors <= n < 2*n_neighbors+1:
                             weights.append(s2*RDs[n])
                         if 1+2*n_neighbors <= n < 3*n_neighbors+1:
                             weights.append(s3*RDs[n])
                     # weights = np.clip(weights, 0, 1)
                     weights = np.array(weights)
-                    # expectation = np.sum(weights*obs_history)
-                    expectation = np.mean(weights*obs_history)
+                    expectation = np.sum(weights*obs_history)
+                    # expectation = np.mean(weights*obs_history)
                 # print(stage, weights)
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
