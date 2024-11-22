@@ -10,13 +10,16 @@ def likelihood(param, model_type, sid):
     data = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = data['trial'].unique()
     stages = data['stage'].unique()
-    if model_type in ['RL1', 'RL1rd']:
-        alpha = param[0]  # learning rate for all stages
+    if model_type in ['RL1']:
+        s1 = param[0]  # learning rate for all stages
+        s2 = param[0]  # learning rate for all stages
+        s3 = param[0]  # learning rate for all stages
         inv_temp = param[1]  # determines randomness in policy (passed to softmax)
-    if model_type in ['RL2', 'RL2rd']:
-        alpha = param[0]  # learning rate for stage 1
-        beta = param[1]  # learning rate for stages 2-3
-        inv_temp = param[2]
+    if model_type in ['RL3', 'RL3rd']:
+        s1 = param[0]  # learning rate for stage 1
+        s2 = param[1]  # learning rate for stage 2
+        s3 = param[2]  # learning rate for stage 2
+        inv_temp = param[3]
     if model_type in ['ZK']:
         z = param[0]
         k = param[1]
@@ -26,13 +29,16 @@ def likelihood(param, model_type, sid):
         datafile = "WM_z05k12" if model_type=='NEF-WM' else "RL_z05k12"
         nef_data = pd.read_pickle(f"data/{datafile}.pkl").query("type!='human' & sid==@sid")
     if model_type in ['DGn', 'DGrd']:
+        s1 = 1
+        s2 = 1
+        s3 = 1
         inv_temp = param[0]
     if model_type in ['DGrds']:
         # s0 = param[0]
-        # s1 = param[1]
-        s2 = param[0]
-        s3 = param[1]
-        inv_temp = param[2]
+        s1 = param[0]
+        s2 = param[1]
+        s3 = param[2]
+        inv_temp = param[3]
     for trial in trials:
         n_samples = 0
         expectation = 0
@@ -44,18 +50,18 @@ def likelihood(param, model_type, sid):
             if model_type in ['NEF-WM', "NEF-RL"]:
                 nef_subdata = nef_data.query("trial==@trial & stage==@stage")
                 expectation = nef_subdata['estimate'].to_numpy()[-1]
-            elif model_type in ['RL1', "RL1rd", "RL2", "RL2rd"]:
+            elif model_type in ['RL1', "RL3", "RL3rd"]:
                 for n in range(len(observations)):
                     obs = observations[n]
+                    RD = RDs[n] if (model_type in ['RL3rd'] and stage>1) else 1
                     if stage==0:
-                        RD = 1
                         learning_rate = 1
                     if stage==1:
-                        RD = 1
-                        learning_rate = alpha
-                    if stage in [2,3]:
-                        RD = RDs[n] if model_type in ['RL1rd', 'RL2rd'] else 1
-                        learning_rate = beta if model_type in ['RL2', 'RL2rd'] else alpha
+                        learning_rate = s1
+                    if stage==2:
+                        learning_rate = s2
+                    if stage==3:
+                        learning_rate = s3
                     error = obs - expectation
                     LR = RD*learning_rate
                     LR = np.clip(LR, 0, 1)
@@ -81,25 +87,20 @@ def likelihood(param, model_type, sid):
                 elif model_type in ['DGrd', 'DGrds']:
                     weights = []
                     RDs = history['RD'].to_numpy()
-                    w_avg = 1 / len(obs_history)
-                    if model_type=='DGrd':
-                        s2, s3 = 1, 1
                     for n in range(len(obs_history)):
                         if 0 <= n < 1:
-                            weights.append(w_avg)   # do NOT factor in RD at stage 0
+                            weights.append(1)   # do NOT factor in RD at stage 0
                             # weights.append(s0*RDs[n])  # DO factor in RD at stage 0
                         if 1 <= n < 1+n_neighbors:
-                            weights.append(w_avg)  # do NOT factor in RD at stage 1
+                            weights.append(s1)  # do NOT factor in RD at stage 1
                             # weights.append(s1*RDs[n])  # DO factor in RD at stage 1
                         if 1+n_neighbors <= n < 2*n_neighbors+1:
                             weights.append(s2*RDs[n])
                         if 1+2*n_neighbors <= n < 3*n_neighbors+1:
                             weights.append(s3*RDs[n])
-                    # weights = np.clip(weights, 0, 1)
-                    weights = np.array(weights)
-                    expectation = np.sum(weights*obs_history)
-                    # expectation = np.mean(weights*obs_history)
-                # print(stage, weights)
+                    weights = np.clip(weights, 0, 1)
+                    # expectation = np.sum(weights*obs_history)
+                    expectation = np.mean(weights*obs_history)
             act = subdata['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'trial {trial}, stage {stage}, expectation {expectation}, action {act}, prob {prob}')
@@ -115,15 +116,12 @@ def stat_fit(model_type, sid, save=True):
     if model_type == 'RL1':
         param0 = [0.1, 1.0]
         bounds = [(0,1), (0,100)]
-    if model_type == 'RL1rd':
-        param0 = [0.5, 1.0]
-        bounds = [(0,10), (0,100)]
-    if model_type == 'RL2':
-        param0 = [0.1, 0.1, 1.0]
-        bounds = [(0,1), (0,1), (0,100)]
-    if model_type == 'RL2rd':
-        param0 = [0.5, 0.5, 1.0]
-        bounds = [(0,10), (0,10), (0,100)]
+    if model_type == 'RL3':
+        param0 = [0.5, 0.5, 0.5, 1.0]
+        bounds = [(0,10), (0,10), (0, 10), (0,100)]
+    if model_type == 'RL3rd':
+        param0 = [0.5, 0.5, 0.5, 1.0]
+        bounds = [(0,10), (0,10), (0, 10), (0,100)]
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,100)]
@@ -134,11 +132,8 @@ def stat_fit(model_type, sid, save=True):
         param0 = [1.0]
         bounds = [(0,100)]
     if model_type == 'DGrds':
-        param0 = [0.5, 0.5, 10]
-        bounds = [(0,1), (0,1), (0,100)]
-    # if model_type == 'DGrds':
-    #     param0 = [0.5, 0.5, 0.5, 0.5, 10]
-    #     bounds = [(0,1), (0,1), (0,1), (0,1), (0,100)]
+        param0 = [1, 1, 1, 10]
+        bounds = [(0, 10), (0,10), (0,10), (0,100)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
