@@ -15,14 +15,14 @@ for sid in sids:
 			if model_type == 'all':
 				for mt in ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']:
 					df1 = pd.read_pickle(f"data/{mt}_{sid}_performance.pkl")
-					df2 = pd.read_pickle(f"data/{mt}_{sid}_param.pkl")
+					df2 = pd.read_pickle(f"data/{mt}_{sid}_params.pkl")
 					df3 = pd.read_pickle(f"data/{mt}_{sid}_rerun.pkl")
 					dfs1.append(df1)
 					dfs2.append(df2)
 					dfs3.append(df3)
 			else:
 				df1 = pd.read_pickle(f"data/{model_type}_{sid}_performance.pkl")
-				df2 = pd.read_pickle(f"data/{model_type}_{sid}_param.pkl")
+				df2 = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl")
 				df3 = pd.read_pickle(f"data/{model_type}_{sid}_rerun.pkl")
 				dfs1.append(df1)
 				dfs2.append(df2)
