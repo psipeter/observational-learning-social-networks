@@ -27,12 +27,13 @@ if __name__ == '__main__':
 	# objective(None, model_type, sid)
 	# raise
 
-	# host = "gra-dbaas1.computecanada.ca"
-	# user = "psipeter"
-	# password = "gimuZhwLKPeU99bt"
+	host = "olsn-18b4-db.c.dartmouth.edu"
+	user = "psipeter"
+	password = ""
+
 	study = optuna.create_study(
 		study_name=study_name,
-		# storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{user}_{study_name}",
+		storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
 		load_if_exists=True,
 		direction="minimize")
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)

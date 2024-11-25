@@ -4,112 +4,119 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import sys
+import optuna
 
-def likelihood(param, model_type, sid):
-    NLL = 0
-    data = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
-    trials = data['trial'].unique()
-    stages = data['stage'].unique()
-    if model_type in ['RL1']:
-        s1 = param[0]  # learning rate for all stages
-        s2 = param[0]  # learning rate for all stages
-        s3 = param[0]  # learning rate for all stages
-        inv_temp = param[1]  # determines randomness in policy (passed to softmax)
-    if model_type in ['RL3', 'RL3rd']:
-        s1 = param[0]  # learning rate for stage 1
-        s2 = param[1]  # learning rate for stage 2
-        s3 = param[2]  # learning rate for stage 2
-        inv_temp = param[3]
-    if model_type in ['ZK']:
-        z = param[0]
-        k = param[1]
-        inv_temp = param[2]
-    if model_type in ['NEF-WM', 'NEF-RL']:
-        inv_temp = param[0]
-        datafile = "WM_z05k12" if model_type=='NEF-WM' else "RL_z05k12"
-        nef_data = pd.read_pickle(f"data/{datafile}.pkl").query("type!='human' & sid==@sid")
-    if model_type in ['DGn', 'DGrd']:
-        s1 = 1
-        s2 = 1
-        s3 = 1
-        inv_temp = param[0]
-    if model_type in ['DGrds']:
-        # s0 = param[0]
-        s1 = param[0]
-        s2 = param[1]
-        s3 = param[2]
-        inv_temp = param[3]
+def compute_mcfadden(NLL, sid):
+    null_log_likelihood = 0
+    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
     for trial in trials:
-        n_samples = 0
-        expectation = 0
         for stage in stages:
-            subdata = data.query("trial==@trial & stage==@stage")
-            observations = subdata['color'].to_numpy()
-            observations = 2*observations - np.ones_like(observations)
-            RDs = subdata['RD'].to_numpy()
-            if model_type in ['NEF-WM', "NEF-RL"]:
-                nef_subdata = nef_data.query("trial==@trial & stage==@stage")
-                expectation = nef_subdata['estimate'].to_numpy()[-1]
-            elif model_type in ['RL1', "RL3", "RL3rd"]:
-                for n in range(len(observations)):
-                    obs = observations[n]
-                    RD = RDs[n] if (model_type in ['RL3rd'] and stage>1) else 1
-                    if stage==0:
-                        learning_rate = 1
-                    if stage==1:
-                        learning_rate = s1
-                    if stage==2:
-                        learning_rate = s2
-                    if stage==3:
-                        learning_rate = s3
-                    error = obs - expectation
-                    LR = RD*learning_rate
-                    LR = np.clip(LR, 0, 1)
-                    expectation += LR * error               
-            elif model_type in ['ZK']:
-                for n in range(len(observations)):
-                    n_samples += 1
-                    decay = 1 / n_samples
-                    obs = observations[n]
-                    RD = 0 if stage in [0,1] else RDs[n]
-                    error = obs - expectation
-                    weight = decay**k + z*RD
-                    weight = np.clip(weight, 0, 1)
-                    expectation += weight * error                 
-            elif model_type in ['DGn', 'DGrd', 'DGrds']:
-                history = data.query("trial==@trial & stage<=@stage")
-                obs_history = history['color'].to_numpy()
-                obs_history = 2*obs_history - np.ones_like(obs_history)
-                n_neighbors = len(subdata['color'].to_numpy())
-                if model_type=='DGn':
-                    weights = np.ones_like(obs_history)                    
-                    expectation = np.mean(weights*obs_history)
-                elif model_type in ['DGrd', 'DGrds']:
-                    weights = []
-                    RDs = history['RD'].to_numpy()
-                    for n in range(len(obs_history)):
-                        if 0 <= n < 1:
-                            weights.append(1)   # do NOT factor in RD at stage 0
-                            # weights.append(s0*RDs[n])  # DO factor in RD at stage 0
-                        if 1 <= n < 1+n_neighbors:
-                            weights.append(s1)  # do NOT factor in RD at stage 1
-                            # weights.append(s1*RDs[n])  # DO factor in RD at stage 1
-                        if 1+n_neighbors <= n < 2*n_neighbors+1:
-                            weights.append(s2*RDs[n])
-                        if 1+2*n_neighbors <= n < 3*n_neighbors+1:
-                            weights.append(s3*RDs[n])
-                    weights = np.clip(weights, 0, 1)
-                    # expectation = np.sum(weights*obs_history)
-                    expectation = np.mean(weights*obs_history)
-            act = subdata['action'].unique()[0]
+            act = human.query("trial==@trial & stage==@stage")['action'].unique()[0]
+            prob = scipy.special.expit(0)
+            null_log_likelihood -= np.log(prob) if act==1 else np.log(1-prob)
+    mcfadden_r2 = 1 - NLL/null_log_likelihood
+    # n_trials = len(subdata['trial'].unique()) * len(subdata['stage'].unique())
+    # mcfadden_r2 = 1 - NLL/(n_trials*np.log(0.5))
+
+def get_param_names(model_type):
+    if model_type in ['NEF-WM', 'NEF-RL']:
+        param_names = ['inv_temp']
+    if model_type == 'RL1':
+        param_names = ['learning_rate_1', 'inv_temp']
+    if model_type == 'RL3':
+        param_names = ['learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+    if model_type == 'RL3rd':
+        param_names = ['learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+    if model_type == 'ZK':
+        param_names = ['z', 'k', 'inv_temp']
+    if model_type == 'DGn':
+        param_names = ['inv_temp']
+    if model_type == 'DGrd':
+        param_names = ['inv_temp']
+    if model_type == 'DGrds':
+        param_names = ['s1', 's2', 's3', 'inv_temp']
+    return param_names
+
+def get_expectation(model_type, params, trial, stage, sid):
+    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    if model_type in ['NEF-WM', 'NEF-RL']:
+        if model_type == 'NEF-WM':
+            nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM'")
+        if model_type == 'NEF-RL':
+            nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL'")
+        expectation = nef_data['estimate'].to_numpy()[-1]
+    if model_type in ['RL1', "RL3", "RL3rd"]:
+        if model_type == 'RL1':
+            learning_rates = [1, params[0], params[0], params[0]]
+        if model_type in ['RL3', 'RL3rd']:
+            learning_rates = [1, params[0], params[1], params[2]]
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        expectation = 0
+        for o, obs in enumerate(observations):
+            stg = int(subdata.iloc[o]['stage'])
+            RD = RDs[o] if (model_type in ['RL3rd'] and stg>1) else 1
+            learning_rate = learning_rates[stg]
+            error = obs - expectation
+            LR = RD*learning_rate
+            LR = np.clip(LR, 0, 1)
+            expectation += LR * error
+    if model_type=='ZK':
+        z = params[0]
+        k = params[1]
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        expectation = 0
+        for o, obs in enumerate(observations):
+            stg = int(subdata.iloc[o]['stage'])
+            decay = 1 / (o+1)
+            RD = 0 if stg in [0,1] else RDs[o]
+            error = obs - expectation
+            weight = decay**k + z*RD
+            weight = np.clip(weight, 0, 1)
+            expectation += weight * error  
+    if model_type in ['DGn', 'DGrd', 'DGrds']:
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        if model_type=='DGn':
+            expectation = np.mean(observations)
+        if model_type in ['DGrd', 'DGrds']:
+            if model_type=='DGrd':
+                weights = [1, 1, 1, 1]
+            if model_type=='DGrds':
+                weights = [1, params[0], params[1], params[2]]
+            expectation = 0
+            for o, obs in enumerate(observations):
+                stg = int(subdata.iloc[o]['stage'])
+                w = weights[stg]
+                RD = RDs[o] if stg>1 else 1
+                weight = np.clip(w*RD, 0, 1)
+                expectation += weight*obs
+            expectation = expectation / len(observations)
+    return expectation
+
+
+def likelihood(params, model_type, sid):
+    NLL = 0
+    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    inv_temp = params[-1]
+    for trial in trials:
+        for stage in stages:
+            expectation = get_expectation(model_type, params, trial, stage, sid)
+            act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'trial {trial}, stage {stage}, expectation {expectation}, action {act}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def stat_fit(model_type, sid, save=True):
-    dfs = []
-    columns = ['type', 'sid', 'NLL', 'McFadden R2']
+def stat_fit_scipy(model_type, sid, save=True):
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [1.0]
         bounds = [(0,100)]
@@ -117,8 +124,8 @@ def stat_fit(model_type, sid, save=True):
         param0 = [0.1, 1.0]
         bounds = [(0,1), (0,100)]
     if model_type == 'RL3':
-        param0 = [0.5, 0.5, 0.5, 1.0]
-        bounds = [(0,10), (0,10), (0, 10), (0,100)]
+        param0 = [0.1, 0.1, 0.1, 1.0]
+        bounds = [(0,1), (0,1), (0, 1), (0,100)]
     if model_type == 'RL3rd':
         param0 = [0.5, 0.5, 0.5, 1.0]
         bounds = [(0,10), (0,10), (0, 10), (0,100)]
@@ -140,28 +147,90 @@ def stat_fit(model_type, sid, save=True):
         args=(model_type, sid),
         bounds=bounds,
         options={'disp':False})
+    # Save Negative Log Likelihood and McFadden R2
     NLL = result.fun
-    # compute McFadden R2
-    null_log_likelihood = 0
-    subdata = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
-    for trial in subdata['trial'].unique():
-        for stage in subdata.query("trial==@trial")['stage'].unique():
-            expectation = 0
-            act = subdata.query("trial==@trial & stage==@stage")['action'].unique()[0]
-            prob = scipy.special.expit(expectation)
-            null_log_likelihood -= np.log(prob) if act==1 else np.log(1-prob)
-    mcfadden_r2 = 1 - NLL/null_log_likelihood
-    # n_trials = len(subdata['trial'].unique()) * len(subdata['stage'].unique())
-    # mcfadden_r2 = 1 - NLL/(n_trials*np.log(0.5))
-    fitted_params = result.x
-    fitted_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=columns)
+    mcfadden_r2 = compute_mcfadden(NLL, sid)
+    performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=['type', 'sid', 'NLL', 'McFadden R2'])
     if save:
-        fitted_data.to_pickle(f"data/{model_type}_{sid}.pkl")
-        np.savez(f"data/{model_type}_{sid}.npz", fitted_params)
-    return fitted_data, fitted_params
+        performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+    # Save the fitted parameters
+    param_names = get_param_names(model_type)
+    fitted_params = pd.DataFrame([result.x], columns=param_names)
+    if save:
+        fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+    return performance_data, fitted_params
+
+def stat_fit_optuna(model_type, sid, optuna_trials=100, save=True):
+    study = optuna.create_study(study_name=f"{model_type}_{sid}", direction="minimize")
+    study.optimize(lambda trial: optuna_wrapper(trial, model_type, sid), n_trials=optuna_trials)
+    # Save Negative Log Likelihood and McFadden R2
+    NLL = study.best_value
+    mcfadden_r2 = compute_mcfadden(NLL, sid)
+    performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=['type', 'sid', 'NLL', 'McFadden R2'])
+    if save:
+        performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+    # Save the fitted parameters
+    param_names = get_param_names(model_type)
+    fitted_params = pd.DataFrame([study.best_trial.params], columns=param_names)
+    if save:
+        fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+    return performance_data, fitted_params
+
+
+def optuna_wrapper(trial, model_type, sid):
+    params = []
+    if model_type in ['NEF-WM', 'NEF-RL']:
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'RL1':
+        params.append(trial.suggest_float("learning_rate_1", 0, 1, step=0.001))
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'RL3':
+        params.append(trial.suggest_float("learning_rate_1", 0, 1, step=0.001))
+        params.append(trial.suggest_float("learning_rate_2", 0, 1, step=0.001))
+        params.append(trial.suggest_float("learning_rate_3", 0, 1, step=0.001))
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'RL3rd':
+        params.append(trial.suggest_float("learning_rate_1", 0, 10, step=0.01))
+        params.append(trial.suggest_float("learning_rate_2", 0, 10, step=0.01))
+        params.append(trial.suggest_float("learning_rate_3", 0, 10, step=0.01))
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'ZK':
+        params.append(trial.suggest_float("z", 0, 2, step=0.01))
+        params.append(trial.suggest_float("k", 0, 2, step=0.01))
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'DGn':
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'DGrd':
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'DGrds':
+        params.append(trial.suggest_float("s1", 0, 10, step=0.01))
+        params.append(trial.suggest_float("s2", 0, 10, step=0.01))
+        params.append(trial.suggest_float("s3", 0, 10, step=0.01))
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    NLL = likelihood(params, model_type, sid)
+    return NLL
 
 if __name__ == '__main__':
 
     model_type = sys.argv[1]
     sid = int(sys.argv[2])
-    fitted_data, fitted_params = stat_fit(model_type, sid)
+    # method = sys.argv[3]
+    method = 'scipy'
+
+    if method=='scipy':
+        if model_type=='all':
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            for mt in model_types:
+                print(f"fitting {mt}, sid {sid}")
+                performance_data, fitted_params = stat_fit_scipy(mt, sid)
+        else:
+            performance_data, fitted_params = stat_fit_scipy(model_type, sid)
+
+    if method=='optuna':
+        if model_type=='all':
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            for mt in model_types:
+                print(f"fitting {mt}, sid {sid}")
+                performance_data, fitted_params = stat_fit_optuna(mt, sid)
+        else:
+            performance_data, fitted_params = stat_fit_optuna(model_type, sid)
