@@ -5,6 +5,7 @@ import seaborn as sns
 import pandas as pd
 import sys
 import optuna
+import time
 
 def compute_mcfadden(NLL, sid):
     null_log_likelihood = 0
@@ -216,8 +217,10 @@ if __name__ == '__main__':
     model_type = sys.argv[1]
     sid = int(sys.argv[2])
     # method = sys.argv[3]
-    method = 'scipy'
+    # method = 'scipy'
+    method = 'optuna'
 
+    start = time.time()
     if method=='scipy':
         if model_type=='all':
             model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
@@ -237,3 +240,8 @@ if __name__ == '__main__':
         else:
             print(f"fitting {model_type}, {sid}")
             performance_data, fitted_params = stat_fit_optuna(model_type, sid)
+
+    print(performance_data)
+    print(fitted_params)
+    end = time.time()
+    print(f"runtime {(end-start)/60:.4} min")

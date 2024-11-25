@@ -5,6 +5,7 @@ import seaborn as sns
 import pandas as pd
 import sys
 from fit import get_expectation
+import time
 
 def rerun(model_type, sid, save=True, seed=0):
 	rng = np.random.RandomState(seed=seed)
@@ -54,6 +55,7 @@ if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
 
+	start = time.time()
 	if model_type=='all':
 		model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
 		for mt in model_types:
@@ -61,3 +63,7 @@ if __name__ == '__main__':
 			choice_data = rerun(mt, sid)
 	else:
 		choice_data = rerun(model_type, sid)
+
+	print(choice_data)
+	end = time.time()
+	print(f"runtime {(end-start)/60:.4} min")
