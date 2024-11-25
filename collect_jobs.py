@@ -11,7 +11,7 @@ dfs3 = []
 
 for sid in sids:
 	try:
-		if model_type in ['NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrds']:
+		if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrds']:
 			df1 = pd.read_pickle(f"data/{model_type}_{sid}_performance.pkl")
 			df2 = pd.read_pickle(f"data/{model_type}_{sid}_param.pkl")
 			df3 = pd.read_pickle(f"data/{model_type}_{sid}_rerun.pkl")
