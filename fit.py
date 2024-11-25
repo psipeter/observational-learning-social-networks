@@ -43,10 +43,10 @@ def get_expectation(model_type, params, trial, stage, sid):
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     if model_type in ['NEF-WM', 'NEF-RL']:
         if model_type == 'NEF-WM':
-            nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM'")
+            nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
         if model_type == 'NEF-RL':
-            nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL'")
-        expectation = nef_data['estimate'].to_numpy()[-1]
+            nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
+        expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
     if model_type in ['RL1', "RL3", "RL3rd"]:
         if model_type == 'RL1':
             learning_rates = [1, params[0], params[0], params[0]]
@@ -114,33 +114,34 @@ def likelihood(params, model_type, sid):
             prob = scipy.special.expit(inv_temp*expectation)
             # print(f'trial {trial}, stage {stage}, expectation {expectation}, action {act}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
+    # print(params, model_type, sid, NLL)
     return NLL
 
 def stat_fit_scipy(model_type, sid, save=True):
     if model_type in ['NEF-WM', 'NEF-RL']:
         param0 = [1.0]
-        bounds = [(0,100)]
+        bounds = [(0,10)]
     if model_type == 'RL1':
         param0 = [0.1, 1.0]
-        bounds = [(0,1), (0,100)]
+        bounds = [(0,1), (0,10)]
     if model_type == 'RL3':
         param0 = [0.1, 0.1, 0.1, 1.0]
-        bounds = [(0,1), (0,1), (0, 1), (0,100)]
+        bounds = [(0,1), (0,1), (0, 1), (0,10)]
     if model_type == 'RL3rd':
         param0 = [0.5, 0.5, 0.5, 1.0]
-        bounds = [(0,10), (0,10), (0, 10), (0,100)]
+        bounds = [(0,10), (0,10), (0, 10), (0,10)]
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
-        bounds = [(0,2), (0.1,2), (0,100)]
+        bounds = [(0,2), (0.1,2), (0,10)]
     if model_type == 'DGn':
         param0 = [1.0]
-        bounds = [(0,100)]
+        bounds = [(0,10)]
     if model_type == 'DGrd':
         param0 = [1.0]
-        bounds = [(0,100)]
+        bounds = [(0,10)]
     if model_type == 'DGrds':
         param0 = [1, 1, 1, 10]
-        bounds = [(0, 10), (0,10), (0,10), (0,100)]
+        bounds = [(0, 10), (0,10), (0,10), (0,10)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
@@ -224,6 +225,7 @@ if __name__ == '__main__':
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_scipy(mt, sid)
         else:
+            print(f"fitting {model_type}, {sid}")
             performance_data, fitted_params = stat_fit_scipy(model_type, sid)
 
     if method=='optuna':
@@ -233,4 +235,5 @@ if __name__ == '__main__':
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_optuna(mt, sid)
         else:
+            print(f"fitting {model_type}, {sid}")
             performance_data, fitted_params = stat_fit_optuna(model_type, sid)
