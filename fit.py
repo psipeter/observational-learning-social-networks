@@ -217,8 +217,8 @@ if __name__ == '__main__':
     model_type = sys.argv[1]
     sid = int(sys.argv[2])
     # method = sys.argv[3]
-    # method = 'scipy'
-    method = 'optuna'
+    method = 'scipy'
+    # method = 'optuna'
 
     start = time.time()
     if method=='scipy':

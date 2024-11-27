@@ -33,7 +33,9 @@ for sid in sids:
 	except:
 		print(f"sid {sid} missing")
 
-dfs3.append(pd.read_pickle("data/human.pkl"))
+if model_type == 'all':
+	dfs3.append(pd.read_pickle("data/human.pkl"))
+
 performance = pd.concat(dfs1, ignore_index=True)
 params = pd.concat(dfs2, ignore_index=True)
 reruns = pd.concat(dfs3, ignore_index=True)
