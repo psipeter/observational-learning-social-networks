@@ -20,6 +20,7 @@ def compute_mcfadden(NLL, sid):
     mcfadden_r2 = 1 - NLL/null_log_likelihood
     # n_trials = len(subdata['trial'].unique()) * len(subdata['stage'].unique())
     # mcfadden_r2 = 1 - NLL/(n_trials*np.log(0.5))
+    return mcfadden_r2
 
 def get_param_names(model_type):
     if model_type in ['NEF-WM', 'NEF-RL']:
