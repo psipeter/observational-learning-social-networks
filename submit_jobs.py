@@ -8,7 +8,7 @@ sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:
-	if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrds']:
+	if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds']:
 		# delete_string = f"rm data/*_{sid}_performance.pkl data/*_{sid}_params.pkl"
 		submit_string = ["sbatch", f"fit_{sid}.sh"]
 	if model_type in ['WM', 'RL']:

@@ -142,8 +142,8 @@ def stat_fit_scipy(model_type, sid, save=True):
         param0 = [1.0]
         bounds = [(0,10)]
     if model_type == 'DGrds':
-        param0 = [1, 1, 1, 10]
-        bounds = [(0, 10), (0,10), (0,10), (0,10)]
+        param0 = [0.5, 0.5, 0.5, 1]
+        bounds = [(0, 1), (0,1), (0,1), (0,10)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
@@ -224,7 +224,7 @@ if __name__ == '__main__':
     start = time.time()
     if method=='scipy':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_scipy(mt, sid)
@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
     if method=='optuna':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_optuna(mt, sid)
