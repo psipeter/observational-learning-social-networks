@@ -99,7 +99,7 @@ def get_expectation(model_type, params, trial, stage, sid):
                 RD = RDs[o] if stg>1 else 1
                 weight = np.clip(w*RD, 0, 1)
                 expectation += weight*obs
-            expectation = expectation / len(observations)
+            # expectation = expectation / len(observations)
     return expectation
 
 
