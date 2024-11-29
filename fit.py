@@ -109,6 +109,7 @@ def get_expectation(model_type, params, trial, stage, sid):
                     # weight = np.clip(w*RD, 0, 1)
                     expectation += w*RD*obs
         if model_type == 'DGrdp':
+            RDs = subdata['RD'].to_numpy()
             weights = []
             for o, obs in enumerate(observations):
                 stg = int(subdata.iloc[o]['stage'])
