@@ -39,6 +39,8 @@ def get_param_names(model_type):
         param_names = ['inv_temp']
     if model_type == 'DGrds':
         param_names = ['s2', 's3', 'inv_temp']
+    if model_type == 'DGrdp':
+        param_names = ['inv_temp']
     return param_names
 
 def get_expectation(model_type, params, trial, stage, sid):
@@ -81,7 +83,7 @@ def get_expectation(model_type, params, trial, stage, sid):
             weight = decay**k + z*RD
             weight = np.clip(weight, 0, 1)
             expectation += weight * error  
-    if model_type in ['DGn', 'DGrd', 'DGrds']:
+    if model_type in ['DGn', 'DGrd', 'DGrds', 'DGrdp']:
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
         if model_type=='DGn':
@@ -106,6 +108,13 @@ def get_expectation(model_type, params, trial, stage, sid):
                     RD = RDs[o]
                     # weight = np.clip(w*RD, 0, 1)
                     expectation += w*RD*obs
+        if model_type == 'DGrdp':
+            weights = []
+            for o, obs in enumerate(observations):
+                stg = int(subdata.iloc[o]['stage'])
+                RD = RDs[o] if stg>1 else 0
+                weights.append(1+RD)  # weight of observation is 1 by default, but 1+RD for stage 2-3
+            expectation = np.mean(weights*observations) # average weighted observations
             # if model_type=='DGrd':
             #     weights = [1, 1, 1, 1]
             # if model_type=='DGrds':
@@ -162,6 +171,9 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'DGrds':
         param0 = [0.5, 0.5, 1]
         bounds = [(0, 3), (0,3), (0,10)]
+    if model_type == 'DGrdp':
+        param0 = [1.0]
+        bounds = [(0,10)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
@@ -227,6 +239,8 @@ def optuna_wrapper(trial, model_type, sid):
         params.append(trial.suggest_float("s2", 0, 10, step=0.01))
         params.append(trial.suggest_float("s3", 0, 10, step=0.01))
         params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
+    if model_type == 'DGrdp':
+        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
     NLL = likelihood(params, model_type, sid)
     return NLL
 
@@ -241,7 +255,7 @@ if __name__ == '__main__':
     start = time.time()
     if method=='scipy':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_scipy(mt, sid)
@@ -251,7 +265,7 @@ if __name__ == '__main__':
 
     if method=='optuna':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_optuna(mt, sid)

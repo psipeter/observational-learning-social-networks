@@ -9,9 +9,9 @@ dfs1 = []
 dfs2 = []
 dfs3 = []
 
-if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds']:
+if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp']:
 	if model_type == 'all':
-		for mt in ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']:
+		for mt in ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'ZK', 'NEF-WM', 'NEF-RL']:
 			for sid in sids:
 				try:
 					df1 = pd.read_pickle(f"data/{mt}_{sid}_performance.pkl")

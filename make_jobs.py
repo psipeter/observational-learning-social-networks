@@ -6,7 +6,7 @@ model_type = sys.argv[1]
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 
 for sid in sids:
-   if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds']:
+   if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp']:
       fit_string = f"python fit.py {model_type} {sid}"
       rerun_string = f"python rerun.py {model_type} {sid}"
       file_string = f'fit_{sid}.sh'
