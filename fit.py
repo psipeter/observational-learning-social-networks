@@ -38,7 +38,7 @@ def get_param_names(model_type):
     if model_type == 'DGrd':
         param_names = ['inv_temp']
     if model_type == 'DGrds':
-        param_names = ['s1', 's2', 's3', 'inv_temp']
+        param_names = ['s2', 's3', 'inv_temp']
     return param_names
 
 def get_expectation(model_type, params, trial, stage, sid):
@@ -84,21 +84,39 @@ def get_expectation(model_type, params, trial, stage, sid):
     if model_type in ['DGn', 'DGrd', 'DGrds']:
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
-        RDs = subdata['RD'].to_numpy()
         if model_type=='DGn':
             expectation = np.mean(observations)
         if model_type in ['DGrd', 'DGrds']:
-            if model_type=='DGrd':
-                weights = [1, 1, 1, 1]
-            if model_type=='DGrds':
-                weights = [1, params[0], params[1], params[2]]
-            expectation = 0
-            for o, obs in enumerate(observations):
-                stg = int(subdata.iloc[o]['stage'])
-                w = weights[stg]
-                RD = RDs[o] if stg>1 else 1
-                weight = np.clip(w*RD, 0, 1)
-                expectation += weight*obs
+            if model_type == 'DGrd':
+                late_weights = [1,1]
+            if model_type == 'DGrds':
+                late_weights = [params[0], params[1]]                
+            if stage in [0,1]:
+                expectation = np.mean(observations)
+            else:
+                early_data = human.query("trial==@trial & stage<=1")
+                early_observations = early_data['color'].to_numpy()       
+                expectation = np.mean(early_observations)
+                late_data = human.query("trial==@trial & stage>1")
+                late_observations = late_data['color'].to_numpy()
+                RDs = late_data['RD'].to_numpy()
+                for o, obs in enumerate(late_observations):
+                    stg = 0 if int(late_data.iloc[o]['stage'])==2 else 1
+                    w = late_weights[stg]
+                    RD = RDs[o]
+                    # weight = np.clip(w*RD, 0, 1)
+                    expectation += w*RD*obs
+            # if model_type=='DGrd':
+            #     weights = [1, 1, 1, 1]
+            # if model_type=='DGrds':
+            #     weights = [1, params[0], params[1], params[2]]
+            # expectation = 0
+            # for o, obs in enumerate(observations):
+            #     stg = int(subdata.iloc[o]['stage'])
+            #     w = weights[stg]
+            #     RD = RDs[o] if stg>1 else 1
+            #     weight = np.clip(w*RD, 0, 1)
+            #     expectation += weight*obs
             # expectation = expectation / len(observations)
     return expectation
 
@@ -142,8 +160,8 @@ def stat_fit_scipy(model_type, sid, save=True):
         param0 = [1.0]
         bounds = [(0,10)]
     if model_type == 'DGrds':
-        param0 = [0.5, 0.5, 0.5, 1]
-        bounds = [(0, 1), (0,1), (0,1), (0,10)]
+        param0 = [0.5, 0.5, 1]
+        bounds = [(0, 3), (0,3), (0,10)]
     result = scipy.optimize.minimize(
         fun=likelihood,
         x0=param0,
@@ -206,7 +224,6 @@ def optuna_wrapper(trial, model_type, sid):
     if model_type == 'DGrd':
         params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
     if model_type == 'DGrds':
-        params.append(trial.suggest_float("s1", 0, 10, step=0.01))
         params.append(trial.suggest_float("s2", 0, 10, step=0.01))
         params.append(trial.suggest_float("s3", 0, 10, step=0.01))
         params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
