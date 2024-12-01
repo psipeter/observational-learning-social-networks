@@ -119,18 +119,6 @@ def get_expectation(model_type, params, trial, stage, sid):
                 RD = RDs[o] if stg>1 else 0
                 weights.append(1+w*RD)  # weight of observation is 1 by default, but 1+RD for stage 2-3
             expectation = np.mean(weights*observations) # average weighted observations
-            # if model_type=='DGrd':
-            #     weights = [1, 1, 1, 1]
-            # if model_type=='DGrds':
-            #     weights = [1, params[0], params[1], params[2]]
-            # expectation = 0
-            # for o, obs in enumerate(observations):
-            #     stg = int(subdata.iloc[o]['stage'])
-            #     w = weights[stg]
-            #     RD = RDs[o] if stg>1 else 1
-            #     weight = np.clip(w*RD, 0, 1)
-            #     expectation += weight*obs
-            # expectation = expectation / len(observations)
     return expectation
 
 
@@ -195,7 +183,9 @@ def stat_fit_scipy(model_type, sid, save=True):
         performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
     # Save the fitted parameters
     param_names = get_param_names(model_type)
-    fitted_params = pd.DataFrame([result.x], columns=param_names)
+    params = result.x
+    params = np.insert(params, 0, model_type)
+    fitted_params = pd.DataFrame([params], columns=param_names)
     if save:
         fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
     return performance_data, fitted_params
@@ -211,7 +201,9 @@ def stat_fit_optuna(model_type, sid, optuna_trials=100, save=True):
         performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
     # Save the fitted parameters
     param_names = get_param_names(model_type)
-    fitted_params = pd.DataFrame([study.best_trial.params], columns=param_names)
+    params = study.best_trial.params
+    params = np.insert(params, 0, model_type)
+    fitted_params = pd.DataFrame([params], columns=param_names)
     if save:
         fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
     return performance_data, fitted_params
@@ -265,7 +257,7 @@ if __name__ == '__main__':
     start = time.time()
     if method=='scipy':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_scipy(mt, sid)
@@ -275,7 +267,7 @@ if __name__ == '__main__':
 
     if method=='optuna':
         if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz', 'ZK', 'NEF-WM', 'NEF-RL']
+            model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
             for mt in model_types:
                 print(f"fitting {mt}, sid {sid}")
                 performance_data, fitted_params = stat_fit_optuna(mt, sid)

@@ -16,4 +16,4 @@ for sid in sids:
 		submit_string = ["sbatch", f"nef_{sid}.sh"]
 	# a = subprocess.run(delete_string, shell=True)
 	b = subprocess.run(submit_string)
-	time.sleep(10)  # wait 10s before next submission to help out SLURM system
+	time.sleep(5)  # wait 10s before next submission to help out SLURM system

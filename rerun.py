@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
 	start = time.time()
 	if model_type=='all':
-		model_types = ['RL1', 'RL3rd', 'DGn', 'DGrds', 'ZK', 'NEF-WM', 'NEF-RL']
+		model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
 		for mt in model_types:
 			print(f"rerunning {mt}, sid {sid}")
 			choice_data = rerun(mt, sid)
