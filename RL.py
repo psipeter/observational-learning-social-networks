@@ -116,41 +116,26 @@ def simulate_RL(env, z=0, k=1, learning_rate=1e-4, seed_sim=0, seed_net=0, progr
 
 
 def run_RL(sid, z, k, learning_rate=5e-5, save=True):
-    empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
+    empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
-    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'RD', 'action', 'estimate', 'error', 'z', 'k']
+    columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(sid=sid, trial=trial)
-        net, sim = simulate_RL(env=env, seed_net=sid, z=z, k=k,
-            learning_rate=learning_rate, progress_bar=False)
+        net, sim = simulate_RL(env=env, seed_net=sid, z=z, k=k, learning_rate=learning_rate, progress_bar=False)
         n_observations = 0
         for stage in range(4):
             subdata = empirical.query("trial==@trial and stage==@stage")
-            action_emp = subdata['action'].to_numpy()[0]
-            tidx = int((env.time_sample + stage*env.n_neighbors*env.time_sample)/env.dt)-2
-            action_sim = sim.data[net.probe_decision][tidx][0]
-            action_emp = 2*action_emp - 1  # converts [1,0] into [1,-1]
-            action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
-            error = 1 if action_sim!=action_emp else 0
             observations = subdata['color'].to_numpy()
-            RDs = subdata['RD'].to_numpy()
             for o in range(len(observations)):
                 n_observations += 1
-                obs = 2*observations[o] - 1
-                RD = RDs[o]
                 t0 = int((n_observations*env.time_sample)/env.dt)-100
                 t1 = int((n_observations*env.time_sample)/env.dt)-2
                 estimate = np.mean(sim.data[net.probe_prediction][t0:t1])
-                df = pd.DataFrame([['human', sid, trial, stage, obs, RD, action_emp, None, None, None, None]], columns=columns)
+                df = pd.DataFrame([['RL', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
-                df = pd.DataFrame([['model-RL', sid, trial, stage, obs, RD, action_sim, estimate, error, z, k]], columns=columns)
-                dfs.append(df)
-        # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
         if save:
             data.to_pickle(f"data/RL_{sid}.pkl")
-    # data = pd.concat(dfs, ignore_index=True)
-    # data.to_pickle(f"data/rl_{sid}.pkl")
     return data

@@ -10,7 +10,7 @@ class Environment():
         self.dt = dt
         self.sid = sid
         self.trial = trial
-        self.empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid & trial==@trial")
+        self.empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid & trial==@trial")
         self.color = 0
         self.decay = 0
         self.degree = 0
@@ -33,7 +33,7 @@ class Environment():
                 n_samples = 1
                 decay = 1
                 degree = 0
-                self.colors.extend(2*color-1 * np.ones((tt, 1)))
+                self.colors.extend(color * np.ones((tt, 1)))
                 self.decays.extend(decay * np.ones((tt, 1)))
                 self.degrees.extend(degree * np.ones((tt, 1)))
                 self.inhibit1s.extend(1 * np.ones((tt2, 1)))
@@ -46,7 +46,7 @@ class Environment():
                     degree = 0 if stage==1 else self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
                     n_samples = 1 + (stage-1)*self.n_neighbors + (n+1)                      
                     decay = 1 / n_samples
-                    self.colors.extend(2*color-1 * np.ones((tt, 1)))
+                    self.colors.extend(color * np.ones((tt, 1)))
                     self.decays.extend(decay * np.ones((tt, 1)))
                     self.degrees.extend(degree * np.ones((tt, 1)))
                     self.inhibit1s.extend(1 * np.ones((tt2, 1)))
@@ -132,7 +132,7 @@ def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
     return net, sim
 
 def run_WM(sid, z, k, save=True):
-    empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
+    empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
@@ -144,7 +144,6 @@ def run_WM(sid, z, k, save=True):
         for stage in range(4):
             subdata = empirical.query("trial==@trial and stage==@stage")
             observations = subdata['color'].to_numpy()
-            RDs = subdata['RD'].to_numpy()
             for o in range(len(observations)):
                 n_observations += 1
                 t0 = int((n_observations*env.time_sample)/env.dt)-100
