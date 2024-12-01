@@ -49,9 +49,9 @@ def get_expectation(model_type, params, trial, stage, sid):
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     if model_type in ['NEF-WM', 'NEF-RL']:
         if model_type == 'NEF-WM':
-            nef_data = pd.read_pickle(f"data/WM_z05k12.pkl").query("type=='model-WM' & sid==@sid")
+            nef_data = pd.read_pickle(f"data/WM_loadzk_estimates.pkl").query("sid==@sid")
         if model_type == 'NEF-RL':
-            nef_data = pd.read_pickle(f"data/RL_z05k12.pkl").query("type=='model-RL' & sid==@sid")
+            nef_data = pd.read_pickle(f"data/RL_loadzk_estimates.pkl").query("sid==@sid")
         expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
     if model_type in ['RL1', "RL3", "RL3rd"]:
         if model_type == 'RL1':
