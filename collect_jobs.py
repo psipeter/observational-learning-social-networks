@@ -42,10 +42,11 @@ if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn',
 	reruns.to_pickle(f"data/{model_type}_{label}_reruns.pkl")
 
 if model_type in ['WM', 'RL']:
-	try:
-		df1 = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
-		dfs1.append(df1)
-	except:
-		print(f"missing {model_type} {sid}")
+	for sid in sids:
+		try:
+			df1 = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
+			dfs1.append(df1)
+		except:
+			print(f"missing {model_type} {sid}")
 	estimates = pd.concat(dfs1, ignore_index=True)
 	estimates.to_pickle(f"data/{model_type}_{label}_estimates.pkl")
