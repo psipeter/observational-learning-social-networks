@@ -28,7 +28,8 @@ for sid in sids:
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --time=23:00:0''')
-      rsh.write("\n")
-      rsh.write(fit_string)
+      if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
+         rsh.write("\n")
+         rsh.write(fit_string)
       rsh.write("\n")
       rsh.write(rerun_string)
