@@ -13,7 +13,7 @@ for sid in sids:
    if model_type in ['WM', 'RL']:
       # z = float(sys.argv[2])
       # k = float(sys.argv[3])
-      params = pd.read_pickle(f"data/zk_{sid}_params.pkl")  # use fitted stat model as approximate best params
+      params = pd.read_pickle(f"data/ZK_{sid}_params.pkl")  # use fitted stat model as approximate best params
       z = params['z'].unique()[0]
       k = params['k'].unique()[0]
       rerun_string = f"python run.py {model_type} {sid} {z} {k}"
