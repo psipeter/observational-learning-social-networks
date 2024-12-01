@@ -24,25 +24,25 @@ def compute_mcfadden(NLL, sid):
 
 def get_param_names(model_type):
     if model_type in ['NEF-WM', 'NEF-RL']:
-        param_names = ['inv_temp']
+        param_names = [model_type, 'inv_temp']
     if model_type == 'RL1':
-        param_names = ['learning_rate_1', 'inv_temp']
+        param_names = [model_type, 'learning_rate_1', 'inv_temp']
     if model_type == 'RL3':
-        param_names = ['learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = [model_type, 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'RL3rd':
-        param_names = ['learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = [model_type, 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'ZK':
-        param_names = ['z', 'k', 'inv_temp']
+        param_names = [model_type, 'z', 'k', 'inv_temp']
     if model_type == 'DGn':
-        param_names = ['inv_temp']
+        param_names = [model_type, 'inv_temp']
     if model_type == 'DGrd':
-        param_names = ['inv_temp']
+        param_names = [model_type, 'inv_temp']
     if model_type == 'DGrds':
-        param_names = ['s2', 's3', 'inv_temp']
+        param_names = [model_type, 's2', 's3', 'inv_temp']
     if model_type == 'DGrdp':
-        param_names = ['inv_temp']
+        param_names = [model_type, 'inv_temp']
     if model_type == 'DGrdpz':
-        param_names = ['z', 'inv_temp']
+        param_names = [model_type, 'z', 'inv_temp']
     return param_names
 
 def get_expectation(model_type, params, trial, stage, sid):

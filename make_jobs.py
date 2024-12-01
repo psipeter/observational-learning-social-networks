@@ -11,8 +11,11 @@ for sid in sids:
       rerun_string = f"python rerun.py {model_type} {sid}"
       file_string = f'fit_{sid}.sh'
    if model_type in ['WM', 'RL']:
-      z = float(sys.argv[2])
-      k = float(sys.argv[3])
+      # z = float(sys.argv[2])
+      # k = float(sys.argv[3])
+      params = pd.read_pickle(f"data/zk_{sid}_params.pkl")  # use fitted stat model as approximate best params
+      z = params['z'].unique()[0]
+      k = params['k'].unique()[0]
       rerun_string = f"python run.py {model_type} {sid} {z} {k}"
       file_string = f'nef_{sid}.sh'
    with open (file_string, 'w') as rsh:
