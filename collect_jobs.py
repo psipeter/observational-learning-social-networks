@@ -47,5 +47,5 @@ if model_type in ['WM', 'RL']:
 		dfs1.append(df1)
 	except:
 		print(f"missing {model_type} {sid}")
-	performance = pd.concat(dfs1, ignore_index=True)
-	performance.to_pickle(f"data/{model_type}_{label}_performance.pkl")
+	estimates = pd.concat(dfs1, ignore_index=True)
+	estimates.to_pickle(f"data/{model_type}_{label}_estimates.pkl")
