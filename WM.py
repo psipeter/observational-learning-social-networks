@@ -134,7 +134,7 @@ def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
 def run_WM(sid, z, k, save=True):
     empirical = pd.read_pickle(f"data/behavior.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
-    columns = ['type', 'sid', 'trial', 'stage', 'obs', 'RD', 'action', 'estimate', 'error', 'z', 'k']
+    columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
@@ -143,29 +143,16 @@ def run_WM(sid, z, k, save=True):
         n_observations = 0
         for stage in range(4):
             subdata = empirical.query("trial==@trial and stage==@stage")
-            action_emp = subdata['action'].to_numpy()[0]
-            tidx = int((env.time_sample + stage*env.n_neighbors*env.time_sample)/env.dt)-2
-            action_sim = sim.data[net.probe_decision][tidx][0]
-            action_emp = 2*action_emp - 1  # converts [1,0] into [1,-1]
-            action_sim = 1 if action_sim > 0 else -1  # turn real-value model decision (decoded from neural signal) into binary choice
-            error = 1 if action_sim!=action_emp else 0
             observations = subdata['color'].to_numpy()
             RDs = subdata['RD'].to_numpy()
             for o in range(len(observations)):
                 n_observations += 1
-                obs = 2*observations[o] - 1
-                RD = RDs[o]
                 t0 = int((n_observations*env.time_sample)/env.dt)-100
                 t1 = int((n_observations*env.time_sample)/env.dt)-2
                 estimate = np.mean(sim.data[net.probe_memory][t0:t1])
-                df = pd.DataFrame([['human', sid, trial, stage, obs, RD, action_emp, None, None, None, None]], columns=columns)
+                df = pd.DataFrame([['WM', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
-                df = pd.DataFrame([['model-WM', sid, trial, stage, obs, RD, action_sim, estimate, error, z, k]], columns=columns)
-                dfs.append(df)
-        # export on the fly, to preserve partial data if remote job times out
         data = pd.concat(dfs, ignore_index=True)
         if save:
             data.to_pickle(f"data/WM_{sid}.pkl")
-    # data = pd.concat(dfs, ignore_index=True)
-    # data.to_pickle(f"data/wm_{sid}.pkl")
     return data
