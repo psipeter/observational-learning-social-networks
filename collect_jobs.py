@@ -33,7 +33,7 @@ if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn',
 				dfs2.append(df2)
 				dfs3.append(df3)
 			except:
-				print(f"missing {mt} {sid}")
+				print(f"missing {model_type} {sid}")
 	performance = pd.concat(dfs1, ignore_index=True)
 	params = pd.concat(dfs2, ignore_index=True)
 	reruns = pd.concat(dfs3, ignore_index=True)
