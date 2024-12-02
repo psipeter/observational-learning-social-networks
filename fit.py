@@ -24,25 +24,27 @@ def compute_mcfadden(NLL, sid):
 
 def get_param_names(model_type):
     if model_type in ['NEF-WM', 'NEF-RL']:
-        param_names = [model_type, 'inv_temp']
+        param_names = ['type', 'inv_temp']
     if model_type == 'RL1':
-        param_names = [model_type, 'learning_rate_1', 'inv_temp']
+        param_names = ['type', 'learning_rate_1', 'inv_temp']
     if model_type == 'RL3':
-        param_names = [model_type, 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'RL3rd':
-        param_names = [model_type, 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'ZK':
-        param_names = [model_type, 'z', 'k', 'inv_temp']
+        param_names = ['type', 'z', 'k', 'inv_temp']
+    if model_type == 'ZS':
+        param_names = ['type', 's1', 's2', 's3', 'z', 'inv_temp']
     if model_type == 'DGn':
-        param_names = [model_type, 'inv_temp']
+        param_names = ['type', 'inv_temp']
     if model_type == 'DGrd':
-        param_names = [model_type, 'inv_temp']
+        param_names = ['type', 'inv_temp']
     if model_type == 'DGrds':
-        param_names = [model_type, 's2', 's3', 'inv_temp']
+        param_names = ['type', 's2', 's3', 'inv_temp']
     if model_type == 'DGrdp':
-        param_names = [model_type, 'inv_temp']
+        param_names = ['type', 'inv_temp']
     if model_type == 'DGrdpz':
-        param_names = [model_type, 'z', 'inv_temp']
+        param_names = ['type', 'z', 'inv_temp']
     return param_names
 
 def get_expectation(model_type, params, trial, stage, sid):
@@ -84,7 +86,25 @@ def get_expectation(model_type, params, trial, stage, sid):
             error = obs - expectation
             weight = decay**k + z*RD
             weight = np.clip(weight, 0, 1)
-            expectation += weight * error  
+            expectation += weight * error
+    if model_type=='ZS':
+        decays = [1, params[0], params[1], params[2]]
+        z = params[3]
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        expectation = 0
+        neighbors = len(subdata['who'].unique()) - 1
+        for o, obs in enumerate(observations):
+            stg = int(subdata.iloc[o]['stage'])
+            # decay = 1 if stg==0 else 1/(stg*neighbors)
+            decay = decays[stg]
+            RD = 0 if stg in [0,1] else RDs[o]
+            error = obs - expectation
+            weight = decay + z*RD
+            weight = np.clip(weight, 0, 1)
+            expectation += weight * error
+        # print(stage, decay, observations, expectation)
     if model_type in ['DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
@@ -154,6 +174,9 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,10)]
+    if model_type == 'ZS':
+        param0 = [0.3, 0.2, 0.1, 0.5, 1.0]
+        bounds = [(0,1), (0,1), (0,1), (0,2), (0,10)]
     if model_type == 'DGn':
         param0 = [1.0]
         bounds = [(0,10)]
@@ -183,8 +206,8 @@ def stat_fit_scipy(model_type, sid, save=True):
         performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
     # Save the fitted parameters
     param_names = get_param_names(model_type)
-    params = result.x
-    params = np.insert(params, 0, model_type)
+    params = list(result.x)
+    params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
     if save:
         fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
