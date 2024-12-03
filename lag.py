@@ -63,7 +63,7 @@ def measure_lag(data, model_type):
 # measure_lag(reruns, model_type)
 
 dfs = []
-for model_types in ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']:
+for model_type in ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']:
     dfs.append(pd.read_pickle(f"data/lagged_reruns_{model_type}.pkl"))
 data = pd.concat(dfs, ignore_index=True)
 data.to_pickle(f"data/lagged_reruns_all.pkl")
