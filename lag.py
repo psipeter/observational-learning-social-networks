@@ -44,14 +44,18 @@ def measure_lag(data):
                             action_eq_lagged_obs
                         ]], columns=columns)
                         dfs.append(df)
-    lag_data = pd.concat(dfs, ignore_index=True)
-    lag_data.to_pickle(f"data/lagged_reruns.pkl")
-    return lag_data
+        lag_data = pd.concat(dfs, ignore_index=True)
+        lag_data.to_pickle(f"data/lagged_reruns_{model_type}.pkl")
 
-human = pd.read_pickle(f"data/human.pkl")
-human['type'] = 'human'
-nonnef = pd.read_pickle("data/all_scipy2_reruns.pkl").query("type not in ['DGrd', 'DGrds', 'DGrdp', 'DGrdpz', 'NEF-WM', 'NEF-RL']")
-nefwm = pd.read_pickle("data/NEF-WM_loadzk_reruns.pkl")
-nefrl = pd.read_pickle("data/NEF-RL_loadzk_reruns.pkl")
-reruns = pd.concat([human, nonnef, nefwm, nefrl], ignore_index=True)
-lag_data = measure_lag(reruns)
+# human = pd.read_pickle(f"data/human.pkl")
+# human['type'] = 'human'
+# nan = np.nan
+# nonnef = pd.read_pickle("data/all_scipy2_reruns.pkl").query("type not in ['DGrd', 'DGrds', 'DGrdp', 'DGrdpz', 'NEF-WM', 'NEF-RL']")
+# nefwm = pd.read_pickle("data/NEF-WM_loadzk_reruns.pkl")
+# nefrl = pd.read_pickle("data/NEF-RL_loadzk_reruns.pkl")
+# reruns = pd.concat([human, nonnef, nefwm, nefrl], ignore_index=True)
+# reruns = reruns.query("type != @nan")
+# reruns.to_pickle(f"data/all_reruns.pkl")
+# print(reruns)
+reruns = pd.read_pickle(f"data/all_reruns.pkl")
+measure_lag(reruns)
