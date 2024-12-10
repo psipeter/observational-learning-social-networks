@@ -135,11 +135,12 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         nengo.Connection(ens_stop3, ens_d3.neurons, synapse=0.01, transform=w_stop)
 
         # probes to decode neural activity into represented quantities
+        net.probe_stim = nengo.Probe(node_stim, synapse=None)
         net.probe_stim = nengo.Probe(ens_stim, synapse=0.01)
         net.probe_stop2 = nengo.Probe(ens_stop2, synapse=0.01)
         net.probe_stop3 = nengo.Probe(ens_stop3, synapse=0.01)
-        net.probe_weight = nengo.Probe(ens_weight, synapse=0.01)
-        net.probe_d1 = nengo.Probe(ens_d1, synapse=0.01)
+        net.probe_weight = nengo.Probe(ens_weight, synapse=0.03)
+        net.probe_d1 = nengo.Probe(ens_d1, synapse=0.03)
         net.probe_d2 = nengo.Probe(ens_d2, synapse=0.01)
         net.probe_d3 = nengo.Probe(ens_d3, synapse=0.01)
         net.probe_memory = nengo.Probe(ens_memory, synapse=0.01)
