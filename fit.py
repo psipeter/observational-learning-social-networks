@@ -35,6 +35,8 @@ def get_param_names(model_type):
         param_names = ['type', 'inv_temp']
     if model_type == 'Z':
         param_names = ['type', 'z', 'inv_temp']
+    if model_type == 'K':
+        param_names = ['type', 'k', 'inv_temp']
     if model_type == 'ZK':
         param_names = ['type', 'z', 'k', 'inv_temp']
     if model_type == 'ZS':
@@ -76,14 +78,18 @@ def get_expectation(model_type, params, trial, stage, sid):
             LR = RD*learning_rate
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
-    if model_type in ['Z', 'Z0', 'Z05', 'ZK']:
+    if model_type in ['Z', 'Z0', 'Z05', 'K', 'ZK']:
         if model_type in ['Z', 'ZK']:
             z = params[0]
         elif model_type=='Z0':
             z = 0
         elif model_type=='Z05':
             z = 0.5
-        if model_type=='ZK':
+        elif model_type=='K':
+            z = 0
+        if model_type in ['K']:
+            k = params[0]
+        elif model_type in ['ZK']:
             k = params[1]
         else:
             k = 1
@@ -189,6 +195,9 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'Z':
         param0 = [0.5, 1.0]
         bounds = [(0,2), (0,10)]
+    if model_type == 'K':
+        param0 = [1.0, 1.0]
+        bounds = [(0.5,2.0), (0,10)]
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,10)]
