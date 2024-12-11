@@ -31,6 +31,8 @@ def get_param_names(model_type):
         param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'RL3rd':
         param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+    if model_type in ['Z0', 'Z05']:
+        param_names = ['type', 'inv_temp']
     if model_type == 'Z':
         param_names = ['type', 'z', 'inv_temp']
     if model_type == 'ZK':
@@ -74,9 +76,17 @@ def get_expectation(model_type, params, trial, stage, sid):
             LR = RD*learning_rate
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
-    if model_type in ['Z', 'ZK']:
-        z = params[0]
-        k = params[1] if model_type=='ZK' else 1
+    if model_type in ['Z', 'Z0', 'Z05', 'ZK']:
+        if model_type in ['Z', 'ZK']:
+            z = params[0]
+        elif model_type=='Z0':
+            z = 0
+        elif model_type=='Z05':
+            z = 0.5
+        if model_type=='ZK':
+            k = params[1]
+        else:
+            k = 1
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
         RDs = subdata['RD'].to_numpy()
@@ -173,6 +183,9 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'RL3rd':
         param0 = [0.5, 0.5, 0.5, 1.0]
         bounds = [(0,10), (0,10), (0, 10), (0,10)]
+    if model_type in ['Z0', 'Z05']:
+        param0 = [1.0]
+        bounds = [(0,10)]
     if model_type == 'Z':
         param0 = [0.5, 1.0]
         bounds = [(0,2), (0,10)]

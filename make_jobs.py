@@ -6,10 +6,6 @@ model_type = sys.argv[1]
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 
 for sid in sids:
-   if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
-      fit_string = f"python fit.py {model_type} {sid}"
-      rerun_string = f"python rerun.py {model_type} {sid}"
-      file_string = f'fit_{sid}.sh'
    if model_type in ['WM', 'RL']:
       z = float(sys.argv[2])
       # k = float(sys.argv[3])
@@ -19,6 +15,10 @@ for sid in sids:
       # rerun_string = f"python run.py {model_type} {sid} {z} {k}"
       rerun_string = f"python run.py {model_type} {sid} {z}"
       file_string = f'nef_{sid}.sh'
+   else:
+      fit_string = f"python fit.py {model_type} {sid}"
+      rerun_string = f"python rerun.py {model_type} {sid}"
+      file_string = f'fit_{sid}.sh'
    with open (file_string, 'w') as rsh:
       rsh.write('''#!/bin/bash''')
       rsh.write("\n")
@@ -29,7 +29,7 @@ for sid in sids:
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --time=2:00:0''')
-      if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
+      if model_type not in ['WM', 'RL']:
          rsh.write("\n")
          rsh.write(fit_string)
       rsh.write("\n")

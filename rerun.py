@@ -12,7 +12,7 @@ def rerun(model_type, sid, save=True, seed=0):
 	human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
 	stages = human['stage'].unique()
-	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()
+	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[1:]
 	dfs = []
 	columns = ['type', 'sid', 'trial', 'network', 'stage', 'who', 'color', 'degree', 'RD', 'action']
 	for trial in trials:

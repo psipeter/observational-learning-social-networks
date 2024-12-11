@@ -9,7 +9,17 @@ dfs1 = []
 dfs2 = []
 dfs3 = []
 
-if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
+if model_type in ['WM', 'RL']:
+	for sid in sids:
+		try:
+			df1 = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
+			dfs1.append(df1)
+		except:
+			print(f"missing {model_type} {sid}")
+	estimates = pd.concat(dfs1, ignore_index=True)
+	estimates.to_pickle(f"data/{model_type}_{label}_estimates.pkl")
+
+else:
 	if model_type == 'all':
 		for mt in ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']:
 			for sid in sids:
@@ -40,13 +50,3 @@ if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', '
 	performance.to_pickle(f"data/{model_type}_{label}_performance.pkl")
 	params.to_pickle(f"data/{model_type}_{label}_params.pkl")
 	reruns.to_pickle(f"data/{model_type}_{label}_reruns.pkl")
-
-if model_type in ['WM', 'RL']:
-	for sid in sids:
-		try:
-			df1 = pd.read_pickle(f"data/{model_type}_{sid}.pkl")
-			dfs1.append(df1)
-		except:
-			print(f"missing {model_type} {sid}")
-	estimates = pd.concat(dfs1, ignore_index=True)
-	estimates.to_pickle(f"data/{model_type}_{label}_estimates.pkl")
