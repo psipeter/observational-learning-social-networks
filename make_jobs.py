@@ -6,7 +6,7 @@ model_type = sys.argv[1]
 sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 
 for sid in sids:
-   if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
+   if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
       fit_string = f"python fit.py {model_type} {sid}"
       rerun_string = f"python rerun.py {model_type} {sid}"
       file_string = f'fit_{sid}.sh'
@@ -28,8 +28,8 @@ for sid in sids:
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
-      rsh.write('''#SBATCH --time=23:00:0''')
-      if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
+      rsh.write('''#SBATCH --time=2:00:0''')
+      if model_type in ['all', 'NEF-WM', 'NEF-RL', 'RL1', 'RL3', 'RL3rd', 'Z', 'ZK', 'DGn', 'DGrd', 'DGrds', 'DGrdp', 'DGrdpz']:
          rsh.write("\n")
          rsh.write(fit_string)
       rsh.write("\n")
