@@ -13,7 +13,7 @@ for sid in sids:
 		df1 = pd.read_pickle(f"data/{model_type}_{sid}_performance.pkl")
 		df2 = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl")
 		if model_type in ["NEF_WM"]:
-			df3 = pd.read_pickle(f"data/{model_type}_{sid}_rerun.pkl")
+			df3 = pd.read_pickle(f"data/{model_type}_{sid}_estimates.pkl")
 		else:
 			df3 = pd.read_pickle(f"data/{model_type}_{sid}_rerun.pkl")
 		dfs1.append(df1)
