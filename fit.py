@@ -23,15 +23,15 @@ def compute_mcfadden(NLL, sid):
     return mcfadden_r2
 
 def get_param_names(model_type):
-    if model_type in ['NEF-WM', 'NEF-RL']:
-        param_names = ['type', 'inv_temp']
+    if model_type in ['NEF_WM', 'NEF_RL']:
+        param_names = ['type', 'z', 'k', 'inv_temp']
     if model_type == 'RL1':
         param_names = ['type', 'learning_rate_1', 'inv_temp']
     if model_type == 'RL3':
         param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'RL3rd':
         param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
-    if model_type in ['Z0', 'Z05']:
+    if model_type in ['Z0K1']:
         param_names = ['type', 'inv_temp']
     if model_type == 'Z':
         param_names = ['type', 'z', 'inv_temp']
@@ -55,11 +55,11 @@ def get_param_names(model_type):
 
 def get_expectation(model_type, params, trial, stage, sid):
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
-    if model_type in ['NEF-WM', 'NEF-RL']:
-        if model_type == 'NEF-WM':
-            nef_data = pd.read_pickle(f"data/WM_loadzk_estimates.pkl").query("sid==@sid")
-        if model_type == 'NEF-RL':
-            nef_data = pd.read_pickle(f"data/RL_loadzk_estimates.pkl").query("sid==@sid")
+    if model_type == 'NEF_WM':
+        nef_data = pd.read_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
+        expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
+    if model_type == 'NEF_RL':
+        nef_data = pd.read_pickle(f"data/NEF_RL_{sid}_estimates.pkl")
         expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].to_numpy()[-1]
     if model_type in ['RL1', "RL3", "RL3rd"]:
         if model_type == 'RL1':
@@ -78,21 +78,19 @@ def get_expectation(model_type, params, trial, stage, sid):
             LR = RD*learning_rate
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
-    if model_type in ['Z', 'Z0', 'Z05', 'K', 'ZK']:
-        if model_type in ['Z', 'ZK']:
-            z = params[0]
-        elif model_type=='Z0':
+    if model_type in ['Z0K1', 'Z', 'K', 'ZK']:
+        if model_type=='Z0K1':
             z = 0
-        elif model_type=='Z05':
-            z = 0.5
-        elif model_type=='K':
-            z = 0
-        if model_type in ['K']:
-            k = params[0]
-        elif model_type in ['ZK']:
-            k = params[1]
-        else:
             k = 1
+        if model_type == 'Z':
+            z = params[0]
+            k = 1
+        if model_type=='K':
+            z = 0
+            k = params[0]
+        if model_type=='ZK':
+            z = params[0]
+            k = params[1]
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
         RDs = subdata['RD'].to_numpy()
@@ -171,15 +169,10 @@ def likelihood(params, model_type, sid):
             expectation = get_expectation(model_type, params, trial, stage, sid)
             act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*expectation)
-            # print(f'trial {trial}, stage {stage}, expectation {expectation}, action {act}, prob {prob}')
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
-    # print(params, model_type, sid, NLL)
     return NLL
 
 def stat_fit_scipy(model_type, sid, save=True):
-    if model_type in ['NEF-WM', 'NEF-RL']:
-        param0 = [1.0]
-        bounds = [(0,10)]
     if model_type == 'RL1':
         param0 = [0.1, 1.0]
         bounds = [(0,1), (0,10)]
@@ -189,7 +182,7 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'RL3rd':
         param0 = [0.5, 0.5, 0.5, 1.0]
         bounds = [(0,10), (0,10), (0, 10), (0,10)]
-    if model_type in ['Z0', 'Z05']:
+    if model_type == 'Z0K1':
         param0 = [1.0]
         bounds = [(0,10)]
     if model_type == 'Z':
@@ -261,8 +254,6 @@ def stat_fit_optuna(model_type, sid, optuna_trials=100, save=True):
 
 def optuna_wrapper(trial, model_type, sid):
     params = []
-    if model_type in ['NEF-WM', 'NEF-RL']:
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
     if model_type == 'RL1':
         params.append(trial.suggest_float("learning_rate_1", 0, 1, step=0.001))
         params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
@@ -306,24 +297,12 @@ if __name__ == '__main__':
 
     start = time.time()
     if method=='scipy':
-        if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
-            for mt in model_types:
-                print(f"fitting {mt}, sid {sid}")
-                performance_data, fitted_params = stat_fit_scipy(mt, sid)
-        else:
-            print(f"fitting {model_type}, {sid}")
-            performance_data, fitted_params = stat_fit_scipy(model_type, sid)
+        print(f"fitting {model_type}, {sid}")
+        performance_data, fitted_params = stat_fit_scipy(model_type, sid)
 
     if method=='optuna':
-        if model_type=='all':
-            model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
-            for mt in model_types:
-                print(f"fitting {mt}, sid {sid}")
-                performance_data, fitted_params = stat_fit_optuna(mt, sid)
-        else:
-            print(f"fitting {model_type}, {sid}")
-            performance_data, fitted_params = stat_fit_optuna(model_type, sid)
+        print(f"fitting {model_type}, {sid}")
+        performance_data, fitted_params = stat_fit_optuna(model_type, sid)
 
     print(performance_data)
     print(fitted_params)

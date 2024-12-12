@@ -56,13 +56,7 @@ if __name__ == '__main__':
 	sid = int(sys.argv[2])
 
 	start = time.time()
-	if model_type=='all':
-		model_types = ['RL1', 'RL3rd', 'DGn', 'ZK', 'NEF-WM', 'NEF-RL']
-		for mt in model_types:
-			print(f"rerunning {mt}, sid {sid}")
-			choice_data = rerun(mt, sid)
-	else:
-		choice_data = rerun(model_type, sid)
+	choice_data = rerun(model_type, sid)
 
 	print(choice_data)
 	end = time.time()

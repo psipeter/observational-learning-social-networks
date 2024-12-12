@@ -180,5 +180,5 @@ def run_WM(sid, z, k, save=True):
                 dfs.append(df)
         data = pd.concat(dfs, ignore_index=True)
         if save:
-            data.to_pickle(f"data/NEF_WM_{sid}.pkl")
+            data.to_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
     return data
