@@ -125,7 +125,7 @@ def run_RL(sid, z, s=[1,1,1,1], a=1.5e-4, decay='stage', save=True):
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
-    for trial in trials[:3]:
+    for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(sid=sid, trial=trial, decay=decay, s=s)
         net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False)

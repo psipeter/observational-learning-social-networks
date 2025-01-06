@@ -22,7 +22,7 @@ def objective(trial, model_type, sid):
 		human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
 		trials = human['trial'].unique()
 		stages = human['stage'].unique()
-		for trial in trials[:3]:
+		for trial in trials:
 			for stage in stages:
 				subdata = data.query("sid==@sid & trial==@trial & stage==@stage")
 				expectation = subdata['estimate'].to_numpy()[0]
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
 	study_name = f"{model_type}_{sid}"
-	optuna_trials = 2
+	optuna_trials = 10
 
 	# objective(None, model_type, sid)
 	# raise
