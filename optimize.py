@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
 	study_name = f"{model_type}_{sid}"
-	optuna_trials = 5
+	optuna_trials = 2
 
 	# objective(None, model_type, sid)
 	# raise
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
 	study = optuna.create_study(
 		study_name=study_name,
-		# storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
+		storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
 		load_if_exists=True,
 		direction="minimize")
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)
