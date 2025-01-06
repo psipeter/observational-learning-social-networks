@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
 	study_name = f"{model_type}_{sid}"
-	optuna_trials = 10
+	optuna_trials = 0
 
 	# objective(None, model_type, sid)
 	# raise
@@ -51,3 +51,12 @@ if __name__ == '__main__':
 		load_if_exists=True,
 		direction="minimize")
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)
+
+	best_params = study.best_trial.params
+	param_names = ["type"]
+	saved_params = [model_type]
+	for key, value in best_params.items():
+		param_names.append(key)
+		saved_params.append(value)
+	fitted_params = pd.DataFrame([saved_params], columns=param_names)
+	fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
