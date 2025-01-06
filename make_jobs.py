@@ -24,13 +24,13 @@ for sid in sids:
    with open (file_string, 'w') as rsh:
       rsh.write('''#!/bin/bash''')
       rsh.write("\n")
-      rsh.write('''#SBATCH --mem=1G''')
+      rsh.write('''#SBATCH --mem=8G''')
       rsh.write("\n")
       rsh.write('''#SBATCH --nodes=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
-      rsh.write('''#SBATCH --time=2:00:0''')
+      rsh.write('''#SBATCH --time=18:00:0''')
       if model_type not in ['NEF_WM']:
          rsh.write("\n")
          rsh.write(fit_string)
