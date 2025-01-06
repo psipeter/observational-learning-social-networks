@@ -58,5 +58,8 @@ if __name__ == '__main__':
 	for key, value in best_params.items():
 		param_names.append(key)
 		saved_params.append(value)
+	print(f"{len(study.trials)} trials completed. Best parameters:")
+	print(param_names)
+	print(saved_params)
 	fitted_params = pd.DataFrame([saved_params], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
