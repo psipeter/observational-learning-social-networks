@@ -6,23 +6,37 @@ import pandas as pd
 import sys
 import optuna
 import mysql.connector
-from WM import *
+import scipy
+from WM2 import *
+from RL2 import *
 
 def objective(trial, model_type, sid):
-	if model_type=='WM':
-		z = trial.suggest_float("z", 0.5, 2.0, step=0.01)
-		k = trial.suggest_float("k", 0.5, 2.0, step=0.01)
-		data = run_WM(sid, z, k, save=False)
-		errors = data.query("type=='model-WM'")['error'].to_numpy()
-		loss = np.sum(errors) / len(errors)
-		return loss
+	if model_type=='NEF_RL':
+		z = trial.suggest_float("z", 0.0, 2.0, step=0.01)
+		b = trial.suggest_float("b", 0.0, 0.4, step=0.001)
+		inv_temp = trial.suggest_float("inv_temp", 0.0, 10.0, step=0.01)
+		s = [1,b,b,b]
+		data = run_RL(sid, z, s, save=False)
+		# from likelihood function in fit.py
+		NLL = 0
+		human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+		trials = human['trial'].unique()
+		stages = human['stage'].unique()
+		for trial in trials[:3]:
+			for stage in stages:
+				subdata = data.query("sid==@sid & trial==@trial & stage==@stage")
+				expectation = subdata['estimate'].to_numpy()[0]
+				act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
+				prob = scipy.special.expit(inv_temp*expectation)
+				NLL -= np.log(prob) if act==1 else np.log(1-prob)
+	return NLL
 
 if __name__ == '__main__':
 
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
 	study_name = f"{model_type}_{sid}"
-	optuna_trials = 2
+	optuna_trials = 5
 
 	# objective(None, model_type, sid)
 	# raise
@@ -33,7 +47,7 @@ if __name__ == '__main__':
 
 	study = optuna.create_study(
 		study_name=study_name,
-		storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
+		# storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
 		load_if_exists=True,
 		direction="minimize")
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)
