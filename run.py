@@ -4,9 +4,8 @@ import seaborn as sns
 import nengo
 import pandas as pd
 import sys
-# from WM import *
 from WM2 import *
-# from RL2 import *
+from RL2 import *
 from fit import *
 
 model_type = sys.argv[1]
