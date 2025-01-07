@@ -15,7 +15,12 @@ for sid in sids:
       rerun_string = f"python run.py {model_type} {sid} {paramfile} {z} {k} {inv_temp}"
       file_string = f'nef_{sid}.sh'
    elif model_type in ['NEF_RL']:
-      fit_string = f"python optimize.py {model_type} {sid}"
+      paramfile = sys.argv[2]
+      params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
+      z = params['z'].unique()[0] if sys.argv[3]=='load' else float(sys.argv[3])
+      b = params['b'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
+      inv_temp = params['inv_temp'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
+      rerun_string = f"python run.py {model_type} {sid} {paramfile} {z} {b} {inv_temp}"
       file_string = f'nef_{sid}.sh'
    else:
       fit_string = f"python fit.py {model_type} {sid}"
