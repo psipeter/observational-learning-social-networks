@@ -151,5 +151,5 @@ def run_RL(sid, z, s=[1,1,1,1], a=5e-5, decay='stage', save=True, direct=False):
                 dfs.append(df)
         data = pd.concat(dfs, ignore_index=True)
         if save:
-            data.to_pickle(f"data/NEF_RL_{sid}.pkl")
+            data.to_pickle(f"data/NEF_RL_{sid}_estimates.pkl")
     return data
