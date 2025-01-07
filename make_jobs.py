@@ -30,10 +30,9 @@ for sid in sids:
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
-      rsh.write('''#SBATCH --time=18:00:0''')
-      if model_type not in ['NEF_WM']:
+      rsh.write('''#SBATCH --time=1:00:0''')
+      if model_type not in ['NEF_WM', 'NEF_RL']:
          rsh.write("\n")
          rsh.write(fit_string)
-      if model_type not in ['NEF_RL']:
-         rsh.write("\n")
-         rsh.write(rerun_string)
+      rsh.write("\n")
+      rsh.write(rerun_string)
