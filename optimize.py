@@ -53,12 +53,13 @@ if __name__ == '__main__':
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)
 
 	best_params = study.best_trial.params
+	best_value = study.best_trial.value
 	param_names = ["type"]
 	saved_params = [model_type]
 	for key, value in best_params.items():
 		param_names.append(key)
 		saved_params.append(value)
-	print(f"{len(study.trials)} trials completed. Best parameters:")
+	print(f"{len(study.trials)} trials completed. Best value is {best_value:.4} with parameters:")
 	print(param_names)
 	print(saved_params)
 	fitted_params = pd.DataFrame([saved_params], columns=param_names)
