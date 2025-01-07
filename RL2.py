@@ -61,7 +61,7 @@ class Environment():
         tidx = int(t/self.dt)
         return [self.colors[tidx], self.degrees[tidx], self.decays[tidx]]
 
-def build_network_RL(env, n_neurons=1000, seed_net=0, syn_feedback=0.1, a=1e-4, z=0):
+def build_network_RL(env, n_neurons=1000, seed_net=0, a=1e-4, z=0, direct=False):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -82,14 +82,24 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, syn_feedback=0.1, a=1e-4, 
         net.input_context = nengo.Node(func_context)
         net.input_decay = nengo.Node(func_decay)
         # ensembles
-        net.obs = nengo.Ensemble(n_neurons, 1)
-        net.degree = nengo.Ensemble(n_neurons, 1)
-        net.decay = nengo.Ensemble(n_neurons, 1)
-        net.weight = nengo.Ensemble(n_neurons, 1)
-        net.context = nengo.Ensemble(n_neurons*env.dim_context, env.dim_context)
-        net.prediction = nengo.Ensemble(n_neurons, 1)
-        net.combined = nengo.Ensemble(4*n_neurons, 3, radius=2)
-        net.error = nengo.Ensemble(n_neurons, 1)
+        if direct:
+            net.obs = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+            net.degree = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+            net.decay = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+            net.weight = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+            net.context = nengo.Ensemble(100, env.dim_context, neuron_type=nengo.LIF())  # must be neurons to have decoders
+            net.prediction = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+            net.combined = nengo.Ensemble(1, 3, neuron_type=nengo.Direct())
+            net.error = nengo.Ensemble(1, 1, neuron_type=nengo.Direct())
+        else:
+            net.obs = nengo.Ensemble(n_neurons, 1)
+            net.degree = nengo.Ensemble(n_neurons, 1)
+            net.decay = nengo.Ensemble(n_neurons, 1)
+            net.weight = nengo.Ensemble(n_neurons, 1)
+            net.context = nengo.Ensemble(n_neurons*env.dim_context, env.dim_context)
+            net.prediction = nengo.Ensemble(n_neurons, 1)
+            net.combined = nengo.Ensemble(4*n_neurons, 3, radius=2)
+            net.error = nengo.Ensemble(n_neurons, 1)
         # connections
         nengo.Connection(net.input_obs, net.obs)
         nengo.Connection(net.input_degree, net.degree)
@@ -112,15 +122,15 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, syn_feedback=0.1, a=1e-4, 
         net.probe_combined = nengo.Probe(net.combined, synapse=0.01)
     return net
 
-def simulate_RL(env, z=0, a=1e-4, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_RL(env, seed_net=seed_net, z=z, a=a)
+def simulate_RL(env, z=0, a=1e-4, seed_sim=0, seed_net=0, progress_bar=True, direct=False):
+    net = build_network_RL(env, seed_net=seed_net, z=z, a=a, direct=direct)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.T, progress_bar=progress_bar)
     return net, sim
 
 
-def run_RL(sid, z, s=[1,1,1,1], a=1.5e-4, decay='stage', save=True):
+def run_RL(sid, z, s=[1,1,1,1], a=1.5e-4, decay='stage', save=True, direct=False):
     empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -128,7 +138,7 @@ def run_RL(sid, z, s=[1,1,1,1], a=1.5e-4, decay='stage', save=True):
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(sid=sid, trial=trial, decay=decay, s=s)
-        net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False)
+        net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False, direct=direct)
         n_observations = 0
         for stage in range(4):
             subdata = empirical.query("trial==@trial and stage==@stage")

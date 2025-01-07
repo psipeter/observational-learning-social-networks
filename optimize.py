@@ -7,16 +7,17 @@ import sys
 import optuna
 import mysql.connector
 import scipy
+import time
 from WM2 import *
 from RL2 import *
 
 def objective(trial, model_type, sid):
 	if model_type=='NEF_RL':
 		z = trial.suggest_float("z", 0.0, 2.0, step=0.01)
-		b = trial.suggest_float("b", 0.0, 0.4, step=0.001)
+		b = trial.suggest_float("b", 0.0, 0.5, step=0.001)
 		inv_temp = trial.suggest_float("inv_temp", 0.0, 10.0, step=0.01)
 		s = [1,b,b,b]
-		data = run_RL(sid, z, s, save=False)
+		data = run_RL(sid, z, s, save=False, direct=True)
 		# from likelihood function in fit.py
 		NLL = 0
 		human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
@@ -45,12 +46,15 @@ if __name__ == '__main__':
 	user = "psipeter"
 	password = ""
 
+	start = time.time()
 	study = optuna.create_study(
 		study_name=study_name,
 		storage=f"mysql+mysqlconnector://{user}:{password}@{host}/{study_name}",
 		load_if_exists=True,
 		direction="minimize")
 	study.optimize(lambda trial: objective(trial, model_type, sid), n_trials=optuna_trials)
+	end = time.time()
+	print(f"runtime {(end-start)/60:.4} minutes")
 
 	best_params = study.best_trial.params
 	best_value = study.best_trial.value
