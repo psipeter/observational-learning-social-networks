@@ -25,6 +25,8 @@ def compute_mcfadden(NLL, sid):
 def get_param_names(model_type):
     if model_type in ['NEF_WM', 'NEF_RL']:
         param_names = ['type', 'z', 'k', 'inv_temp']
+    if model_type == 'RLz':
+        param_names = ['type', 'z', 'b', 'inv_temp']
     if model_type == 'RL1':
         param_names = ['type', 'learning_rate_1', 'inv_temp']
     if model_type == 'RL3':
@@ -76,6 +78,22 @@ def get_expectation(model_type, params, trial, stage, sid):
             learning_rate = learning_rates[stg]
             error = obs - expectation
             LR = RD*learning_rate
+            LR = np.clip(LR, 0, 1)
+            expectation += LR * error
+    if model_type == 'RLz':
+        z = params[0]
+        b = params[1]
+        learning_rates = [1, b, b, b]
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        expectation = 0
+        for o, obs in enumerate(observations):
+            stg = int(subdata.iloc[o]['stage'])
+            RD = 0 if stg<2 else RDs[o]
+            learning_rate = learning_rates[stg]
+            error = obs - expectation
+            LR = learning_rate + z*RD
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
     if model_type in ['Z0K1', 'Z', 'K', 'ZK']:
@@ -173,6 +191,9 @@ def likelihood(params, model_type, sid):
     return NLL
 
 def stat_fit_scipy(model_type, sid, save=True):
+    if model_type == 'RLz':
+        param0 = [0.1, 0.1, 1.0]
+        bounds = [(0,2), (0,1), (0,10)]
     if model_type == 'RL1':
         param0 = [0.1, 1.0]
         bounds = [(0,1), (0,10)]
