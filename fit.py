@@ -41,6 +41,8 @@ def get_param_names(model_type):
         param_names = ['type', 'k', 'inv_temp']
     if model_type == 'ZK':
         param_names = ['type', 'z', 'k', 'inv_temp']
+    if model_type == 'ZxK':
+        param_names = ['type', 'z', 'k', 'inv_temp']
     if model_type == 'ZS':
         param_names = ['type', 's1', 's2', 's3', 'z', 'inv_temp']
     if model_type == 'DGn':
@@ -119,6 +121,21 @@ def get_expectation(model_type, params, trial, stage, sid):
             RD = 0 if stg in [0,1] else RDs[o]
             error = obs - expectation
             weight = decay**k + z*RD
+            weight = np.clip(weight, 0, 1)
+            expectation += weight * error
+    if model_type == 'ZxK':
+        z = params[0]
+        k = params[1]
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        RDs = subdata['RD'].to_numpy()
+        expectation = 0
+        for o, obs in enumerate(observations):
+            stg = int(subdata.iloc[o]['stage'])
+            decay = 1 / (o+1)
+            zRD = 1 if stg in [0,1] else z*RDs[o]
+            error = obs - expectation
+            weight = decay**k * zRD
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
     if model_type=='ZS':
@@ -215,6 +232,9 @@ def stat_fit_scipy(model_type, sid, save=True):
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
         bounds = [(0,2), (0.1,2), (0,10)]
+    if model_type == 'ZxK':
+        param0 = [1, 1.0, 1.0]
+        bounds = [(0,10), (0.1,2), (0,10)]
     if model_type == 'ZS':
         param0 = [0.3, 0.2, 0.1, 0.5, 1.0]
         bounds = [(0,1), (0,1), (0,1), (0,2), (0,10)]
