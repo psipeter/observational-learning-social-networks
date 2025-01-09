@@ -24,39 +24,39 @@ def compute_mcfadden(NLL, sid):
 
 def get_param_names(model_type):
     if model_type in ['NEF_WM', 'NEF_RL']:
-        param_names = ['type', 'z', 'k', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'k', 'inv_temp']
     if model_type == 'RLz':
-        param_names = ['type', 'z', 'b', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'b', 'inv_temp']
     if model_type == 'RLzx':
-        param_names = ['type', 'z', 'b', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'b', 'inv_temp']
     if model_type == 'RL1':
-        param_names = ['type', 'learning_rate_1', 'inv_temp']
+        param_names = ['type', 'sid', 'learning_rate_1', 'inv_temp']
     if model_type == 'RL3':
-        param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = ['type', 'sid', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type == 'RL3rd':
-        param_names = ['type', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
+        param_names = ['type', 'sid', 'learning_rate_1', 'learning_rate_2', 'learning_rate_3', 'inv_temp']
     if model_type in ['Z0K1']:
-        param_names = ['type', 'inv_temp']
+        param_names = ['type', 'sid', 'inv_temp']
     if model_type == 'Z':
-        param_names = ['type', 'z', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'inv_temp']
     if model_type == 'K':
-        param_names = ['type', 'k', 'inv_temp']
+        param_names = ['type', 'sid', 'k', 'inv_temp']
     if model_type == 'ZK':
-        param_names = ['type', 'z', 'k', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'k', 'inv_temp']
     if model_type == 'ZxK':
-        param_names = ['type', 'z', 'k', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'k', 'inv_temp']
     if model_type == 'ZS':
-        param_names = ['type', 's1', 's2', 's3', 'z', 'inv_temp']
+        param_names = ['type', 'sid', 's1', 's2', 's3', 'z', 'inv_temp']
     if model_type == 'DGn':
-        param_names = ['type', 'inv_temp']
+        param_names = ['type', 'sid', 'inv_temp']
     if model_type == 'DGrd':
-        param_names = ['type', 'inv_temp']
+        param_names = ['type', 'sid', 'inv_temp']
     if model_type == 'DGrds':
-        param_names = ['type', 's2', 's3', 'inv_temp']
+        param_names = ['type', 'sid', 's2', 's3', 'inv_temp']
     if model_type == 'DGrdp':
-        param_names = ['type', 'inv_temp']
+        param_names = ['type', 'sid', 'inv_temp']
     if model_type == 'DGrdpz':
-        param_names = ['type', 'z', 'inv_temp']
+        param_names = ['type', 'sid', 'z', 'inv_temp']
     return param_names
 
 def get_expectation(model_type, params, trial, stage, sid):
@@ -289,82 +289,21 @@ def stat_fit_scipy(model_type, sid, save=True):
     # Save the fitted parameters
     param_names = get_param_names(model_type)
     params = list(result.x)
+    params.insert(0, sid)
     params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
     if save:
         fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def stat_fit_optuna(model_type, sid, optuna_trials=100, save=True):
-    study = optuna.create_study(study_name=f"{model_type}_{sid}", direction="minimize")
-    study.optimize(lambda trial: optuna_wrapper(trial, model_type, sid), n_trials=optuna_trials)
-    # Save Negative Log Likelihood and McFadden R2
-    NLL = study.best_value
-    mcfadden_r2 = compute_mcfadden(NLL, sid)
-    performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=['type', 'sid', 'NLL', 'McFadden R2'])
-    if save:
-        performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
-    # Save the fitted parameters
-    param_names = get_param_names(model_type)
-    params = study.best_trial.params
-    params = np.insert(params, 0, model_type)
-    fitted_params = pd.DataFrame([params], columns=param_names)
-    if save:
-        fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
-    return performance_data, fitted_params
-
-
-def optuna_wrapper(trial, model_type, sid):
-    params = []
-    if model_type == 'RL1':
-        params.append(trial.suggest_float("learning_rate_1", 0, 1, step=0.001))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'RL3':
-        params.append(trial.suggest_float("learning_rate_1", 0, 1, step=0.001))
-        params.append(trial.suggest_float("learning_rate_2", 0, 1, step=0.001))
-        params.append(trial.suggest_float("learning_rate_3", 0, 1, step=0.001))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'RL3rd':
-        params.append(trial.suggest_float("learning_rate_1", 0, 10, step=0.01))
-        params.append(trial.suggest_float("learning_rate_2", 0, 10, step=0.01))
-        params.append(trial.suggest_float("learning_rate_3", 0, 10, step=0.01))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'ZK':
-        params.append(trial.suggest_float("z", 0, 2, step=0.01))
-        params.append(trial.suggest_float("k", 0, 2, step=0.01))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'DGn':
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'DGrd':
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'DGrds':
-        params.append(trial.suggest_float("s2", 0, 10, step=0.01))
-        params.append(trial.suggest_float("s3", 0, 10, step=0.01))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'DGrdp':
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    if model_type == 'DGrdpz':
-        params.append(trial.suggest_float("z", 0.5, 2.0, step=0.01))
-        params.append(trial.suggest_float("inv_temp", 0, 10, step=0.01))
-    NLL = likelihood(params, model_type, sid)
-    return NLL
-
 if __name__ == '__main__':
 
     model_type = sys.argv[1]
     sid = int(sys.argv[2])
-    # method = sys.argv[3]
-    method = 'scipy'
-    # method = 'optuna'
 
     start = time.time()
-    if method=='scipy':
-        print(f"fitting {model_type}, {sid}")
-        performance_data, fitted_params = stat_fit_scipy(model_type, sid)
-
-    if method=='optuna':
-        print(f"fitting {model_type}, {sid}")
-        performance_data, fitted_params = stat_fit_optuna(model_type, sid)
+    print(f"fitting {model_type}, {sid}")
+    performance_data, fitted_params = stat_fit_scipy(model_type, sid)
 
     print(performance_data)
     print(fitted_params)
