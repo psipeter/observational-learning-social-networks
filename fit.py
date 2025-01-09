@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import sys
-import optuna
 import time
 
 def compute_mcfadden(NLL, sid):
