@@ -252,7 +252,7 @@ def stat_fit_scipy(model_type, sid, save=True):
         bounds = [(0.5,2.0), (0,10)]
     if model_type == 'ZK':
         param0 = [0.5, 1.0, 1.0]
-        bounds = [(0,2), (0.1,2), (0,10)]
+        bounds = [(0,2), (0.1,2), (0,30)]
     if model_type == 'ZxK':
         param0 = [1, 1.0, 1.0]
         bounds = [(0,10), (0.1,2), (0,10)]
