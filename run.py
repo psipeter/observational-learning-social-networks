@@ -17,14 +17,14 @@ if model_type=='NEF_WM':
 	z = params['z'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
 	inv_temp = params['inv_temp'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
 	data = run_WM(sid, z)
-	param_list = [model_type, z, inv_temp]
+	param_list = [model_type, sid, z, inv_temp]
 
 if model_type=='NEF_RL':
 	z = params['z'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
 	b = params['b'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
 	inv_temp = params['inv_temp'].unique()[0] if sys.argv[6]=='load' else float(sys.argv[6])
 	data = run_RL(sid, z, s=[3,b,b,b])
-	param_list = [model_type, z, b, inv_temp]
+	param_list = [model_type, sid, z, b, inv_temp]
 
 NLL = likelihood(param_list, model_type, sid)
 mcfadden_r2 = compute_mcfadden(NLL, sid)
