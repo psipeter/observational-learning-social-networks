@@ -15,10 +15,9 @@ params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
 
 if model_type=='NEF_WM':
 	z = params['z'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
-	k = params['k'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
-	inv_temp = params['inv_temp'].unique()[0] if sys.argv[6]=='load' else float(sys.argv[6])
-	data = run_WM(sid, z, k)
-	param_list = [model_type, z, k, inv_temp]
+	inv_temp = params['inv_temp'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
+	data = run_WM(sid, z)
+	param_list = [model_type, z, inv_temp]
 
 if model_type=='NEF_RL':
 	z = params['z'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
