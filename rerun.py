@@ -46,9 +46,9 @@ def rerun(model_type, sid, seed=0):
 					final_expectation
 				]], columns=columns)
 				dfs.append(df)
-	rerun_data = pd.concat(dfs, ignore_index=True)
-	rerun_data.to_pickle(f"data/{model_type}_{sid}_rerun.pkl")
-	return rerun_data
+	dynamics_data = pd.concat(dfs, ignore_index=True)
+	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
+	return dynamics_data
 
 
 if __name__ == '__main__':

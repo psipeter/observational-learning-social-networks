@@ -47,11 +47,10 @@ class Environment():
         return [self.colors[tidx], self.degrees[tidx]]
 
 
-def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, k=1):
+def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
-    net.k = k
     net.encoders = nengo.dists.Choice([[1]])
     net.intercepts = nengo.dists.Uniform(0, 1)
     net.eval_points = np.linspace(-1, 1, 1000).reshape(-1,1)
@@ -65,7 +64,7 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, k=1):
     func_stop3 = lambda x: 1 if np.abs(x)>0.1 else 0
     func_differentiate1 = lambda x: 2*np.abs(x)
     func_differentiate2 = lambda x: -2*np.abs(x)
-    func_power = lambda x: np.abs(x)**net.k
+    func_power = lambda x: np.abs(x)
 
     w_stop = -10*np.ones((n_neurons, 1))
 
@@ -102,7 +101,7 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, k=1):
         nengo.Connection(ens_number_memory, ens_number_memory, synapse=0.2)
         nengo.Connection(ens_number_memory, ens_number, transform=25, synapse=0.1)
 
-        # compute weight = 1/N**k from number memory
+        # compute weight = 1/N from number memory
         nengo.Connection(ens_number, ens_centered, synapse=0.01, function=func_center)
         nengo.Connection(ens_centered, ens_weight, synapse=0.03, function=func_inverse, eval_points=net.eval_points)
         nengo.Connection(ens_weight, ens_scaled_weight, synapse=0.03, function=func_power)
@@ -152,14 +151,14 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, k=1):
 
     return net
 
-def simulate_WM(env, z=0, k=1, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_WM(env, seed_net=seed_net, z=z, k=k)
+def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_WM(env, seed_net=seed_net, z=z)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(sid, z, k, save=True):
+def run_WM(sid, z, save=True):
     empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -167,7 +166,7 @@ def run_WM(sid, z, k, save=True):
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(sid=sid, trial=trial)
-        net, sim = simulate_WM(env=env, seed_net=sid, z=z, k=k, progress_bar=False)
+        net, sim = simulate_WM(env=env, seed_net=sid, z=z, progress_bar=False)
         n_observations = 0
         for stage in range(4):
             subdata = empirical.query("trial==@trial and stage==@stage")

@@ -22,17 +22,17 @@ def compute_mcfadden(NLL, sid):
 def get_param_names(model_type):
     if model_type in ['RLz', 'NEF_RL']:
         param_names = ['type', 'sid', 'z', 'b', 'inv_temp']
-    if model_type in ['DGzk', 'NEF_WM']:
-        param_names = ['type', 'sid', 'z', 'k', 'inv_temp']
+    if model_type in ['DGz', 'NEF_WM']:
+        param_names = ['type', 'sid', 'z', 'inv_temp']
     return param_names
 
 def get_param_init_bounds(model_type):
     if model_type in ['RLz', 'NEF_RL']:
         param0 = [0.1, 0.1, 1.0]
         bounds = [(0,3), (0,1), (0,30)]
-    if model_type in ['DGzk', 'NEF_WM']:
-        param0 = [0.5, 1.0, 1.0]
-        bounds = [(0,3), (0.1,5), (0,30)]
+    if model_type in ['DGz', 'NEF_WM']:
+        param0 = [0.5, 1.0]
+        bounds = [(0,3), (0,30)]
     return param0, bounds
 
 def get_expectations(model_type, params, trial, stage, sid):
@@ -61,9 +61,8 @@ def get_expectations(model_type, params, trial, stage, sid):
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
             expectations.append(expectation)
-    if model_type == 'DGzk':
+    if model_type == 'DGz':
         z = params[0]
-        k = params[1]
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
         RDs = subdata['RD'].to_numpy()
@@ -74,7 +73,7 @@ def get_expectations(model_type, params, trial, stage, sid):
             decay = 1 / (o+1)
             RD = 0 if stg in [0,1] else RDs[o]
             error = obs - expectation
-            weight = decay**k + z*RD
+            weight = decay + z*RD
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
             expectations.append(expectation)
