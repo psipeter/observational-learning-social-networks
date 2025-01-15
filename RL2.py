@@ -114,12 +114,15 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=1e-4, z=0, direct=False)
         nengo.Connection(net.combined, net.error, function=func_error, synapse=0.03)
         nengo.Connection(net.error, net.conn.learning_rule)
         # probes
-        net.probe_input = nengo.Probe(net.input_obs, synapse=0)
+        net.probe_input_obs = nengo.Probe(net.input_obs, synapse=0)
+        net.probe_input_degree = nengo.Probe(net.input_degree, synapse=0)
         net.probe_obs = nengo.Probe(net.obs, synapse=0.03)
         net.probe_weight = nengo.Probe(net.weight, synapse=0.03)
         net.probe_prediction = nengo.Probe(net.prediction, synapse=0.03)
         net.probe_error = nengo.Probe(net.error, synapse=0.03)
         net.probe_combined = nengo.Probe(net.combined, synapse=0.03)
+        net.probe_weight_neurons = nengo.Probe(net.weight.neurons, synapse=0.03)
+        net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=0.03)
     return net
 
 def simulate_RL(env, z=0, a=1e-4, seed_sim=0, seed_net=0, progress_bar=True, direct=False):
@@ -152,4 +155,33 @@ def run_RL(sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True, direct=False)
         data = pd.concat(dfs, ignore_index=True)
         if save:
             data.to_pickle(f"data/NEF_RL_{sid}_estimates.pkl")
+    return data
+
+def activity_RL(sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True, direct=False):
+    empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    trials = empirical['trial'].unique() 
+    columns = ['type', 'sid', 'trial', 'stage', 'tidx', 'aPE', 'RD', 'error activity', 'weight activity']
+    dfs = []
+    for trial in trials[:5]:
+        print(f"sid {sid}, trial {trial}")
+        env = Environment(sid=sid, trial=trial, decay=decay, s=s)
+        net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False, direct=direct)
+        n_observations = 0
+        for stage in range(4):
+            subdata = empirical.query("trial==@trial and stage==@stage")
+            observations = subdata['color'].to_numpy()
+            for o in range(len(observations)):
+                tidx = int((n_observations*env.time_sample)/env.dt)+200  # 200ms after stim presentation
+                obs = sim.data[net.probe_input_obs][tidx][0]
+                estimate = sim.data[net.probe_prediction][tidx][0]
+                aPE = np.abs(obs - estimate)
+                RD = sim.data[net.probe_input_degree][tidx][0]
+                error_activity = np.mean(sim.data[net.probe_error_neurons][tidx])
+                weight_activity = np.mean(sim.data[net.probe_weight_neurons][tidx])
+                df = pd.DataFrame([['NEF_RL', sid, trial, stage, tidx, aPE, RD, error_activity, weight_activity]], columns=columns)
+                dfs.append(df)
+                n_observations += 1
+        data = pd.concat(dfs, ignore_index=True)
+        if save:
+            data.to_pickle(f"data/NEF_RL_{sid}_activities.pkl")
     return data
