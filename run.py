@@ -23,7 +23,7 @@ if model_type=='NEF_RL':
 	z = params['z'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
 	b = params['b'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
 	inv_temp = params['inv_temp'].unique()[0] if sys.argv[6]=='load' else float(sys.argv[6])
-	data = run_RL(sid, z, s=[3,b,b,b])
+	# data = run_RL(sid, z, s=[3,b,b,b])
 	activities = activity_RL(sid, z, s=[3,b,b,b])
 	param_list = [model_type, sid, z, b, inv_temp]
 
