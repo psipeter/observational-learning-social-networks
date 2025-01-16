@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import sys
-from fit import get_expectations
+from fit import get_expectations, likelihood, compute_mcfadden
 import time
 
 def rerun(model_type, sid, seed=0):
@@ -56,7 +56,7 @@ def noise_rerun(model_type, sid, sigmas, seed=0):
 	dfs = []
 	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2']
 	for sigma in sigmas:
-		NLL = likelihood(params, model_type, sid, noise=True, sigma=sigma):
+		NLL = likelihood(params, model_type, sid, noise=True, sigma=sigma)
 		mcfadden_r2 = compute_mcfadden(NLL, sid)
 		dfs.append(pd.DataFrame([[model_type, sid, sigma, NLL, mcfadden_r2]], columns=columns))
 	noise_data = pd.concat(dfs, ignore_index=True)
