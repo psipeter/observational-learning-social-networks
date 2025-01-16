@@ -51,11 +51,25 @@ def rerun(model_type, sid, seed=0):
 	return dynamics_data
 
 
+def noise_rerun(model_type, sid, sigmas, seed=0):
+	rng = np.random.RandomState(seed=seed)
+	dfs = []
+	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2']
+	for sigma in sigmas:
+		NLL = likelihood(params, model_type, sid, noise=True, sigma=sigma):
+		mcfadden_r2 = compute_mcfadden(NLL, sid)
+		dfs.append(pd.DataFrame([[model_type, sid, sigma, NLL, mcfadden_r2]], columns=columns))
+	noise_data = pd.concat(dfs, ignore_index=True)
+	noise_data.to_pickle(f"data/{model_type}_{sid}_noise.pkl")
+	return noise_data
+
 if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
+	sigmas = np.arange(0, 0.5, 0.01)
 	start = time.time()
 	choice_data = rerun(model_type, sid)
+	noise_data = noise_rerun(model_type, sid, sigmas)
 	print(choice_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")

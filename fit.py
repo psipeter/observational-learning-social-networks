@@ -40,7 +40,7 @@ def get_param_init_bounds(model_type):
         bounds = [(0,30)]
     return param0, bounds
 
-def get_expectations(model_type, params, trial, stage, sid):
+def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     if model_type == 'NEF_WM':
         nef_data = pd.read_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
@@ -91,12 +91,14 @@ def get_expectations(model_type, params, trial, stage, sid):
             decay = 1 / (o+1)
             error = obs - expectation
             weight = decay
+            if noise:
+                weight = rng.uniform((1-sigma)*weight, (1+sigma)*weight)
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
             expectations.append(expectation)
     return expectations
 
-def likelihood(params, model_type, sid):
+def likelihood(params, model_type, sid, noise=False, sigma=0):
     NLL = 0
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
     trials = human['trial'].unique()
@@ -104,7 +106,7 @@ def likelihood(params, model_type, sid):
     inv_temp = params[-1]
     for trial in trials:
         for stage in stages:
-            expectations = get_expectations(model_type, params, trial, stage, sid)
+            expectations = get_expectations(model_type, params, trial, stage, sid, noise=noise, sigma=sigma)
             final_expectation = expectations[-1]
             act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*final_expectation)
