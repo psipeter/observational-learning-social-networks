@@ -14,18 +14,22 @@ for sid in sids:
 		df1 = pd.read_pickle(f"data/{model_type}_{sid}_performance.pkl")
 		df2 = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl")
 		df3 = pd.read_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
-		df4 = pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl")
+		if model_type in ['NEF_WM', 'NEF_RL']: 
+			df4 = pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl")
 		dfs1.append(df1)
 		dfs2.append(df2)
 		dfs3.append(df3)
-		dfs4.append(df4)
+		if model_type in ['NEF_WM', 'NEF_RL']: 
+			dfs4.append(df4)
 	except:
 		print(f"missing {model_type} {sid}")
 performance = pd.concat(dfs1, ignore_index=True)
 params = pd.concat(dfs2, ignore_index=True)
 reruns = pd.concat(dfs3, ignore_index=True)
-activities = pd.concat(dfs4, ignore_index=True)
+if model_type in ['NEF_WM', 'NEF_RL']: 
+	activities = pd.concat(dfs4, ignore_index=True)
 performance.to_pickle(f"data/{model_type}_{label}_performance.pkl")
 params.to_pickle(f"data/{model_type}_{label}_params.pkl")
 reruns.to_pickle(f"data/{model_type}_{label}_dynamics.pkl")
-activities.to_pickle(f"data/{model_type}_{label}_activities.pkl")
+if model_type in ['NEF_WM', 'NEF_RL']: 
+	activities.to_pickle(f"data/{model_type}_{label}_activities.pkl")

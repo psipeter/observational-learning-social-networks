@@ -24,6 +24,8 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'z', 'b', 'inv_temp']
     if model_type in ['DGz', 'NEF_WM']:
         param_names = ['type', 'sid', 'z', 'inv_temp']
+    if model_type in ['DGn']:
+        param_names = ['type', 'sid', 'inv_temp']
     return param_names
 
 def get_param_init_bounds(model_type):
@@ -33,6 +35,9 @@ def get_param_init_bounds(model_type):
     if model_type in ['DGz', 'NEF_WM']:
         param0 = [0.5, 1.0]
         bounds = [(0,3), (0,30)]
+    if model_type in ['DGn']:
+        param0 = [1.0]
+        bounds = [(0,30)]
     return param0, bounds
 
 def get_expectations(model_type, params, trial, stage, sid):
@@ -74,6 +79,18 @@ def get_expectations(model_type, params, trial, stage, sid):
             RD = 0 if stg in [0,1] else RDs[o]
             error = obs - expectation
             weight = decay + z*RD
+            weight = np.clip(weight, 0, 1)
+            expectation += weight * error
+            expectations.append(expectation)
+    if model_type == 'DGn':
+        subdata = human.query("trial==@trial & stage<=@stage")
+        observations = subdata['color'].to_numpy()
+        expectation = 0
+        expectations = []
+        for o, obs in enumerate(observations):
+            decay = 1 / (o+1)
+            error = obs - expectation
+            weight = decay
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
             expectations.append(expectation)
