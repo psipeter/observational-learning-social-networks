@@ -53,6 +53,7 @@ def rerun(model_type, sid, seed=0):
 
 def noise_rerun(model_type, sid, sigmas, seed=0):
 	rng = np.random.RandomState(seed=seed)
+	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
 	dfs = []
 	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2']
 	for sigma in sigmas:
@@ -71,5 +72,6 @@ if __name__ == '__main__':
 	choice_data = rerun(model_type, sid)
 	noise_data = noise_rerun(model_type, sid, sigmas)
 	print(choice_data)
+	print(noise_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")
