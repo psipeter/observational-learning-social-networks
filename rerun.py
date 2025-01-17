@@ -7,7 +7,7 @@ import sys
 from fit import get_expectations, likelihood, compute_mcfadden
 import time
 
-def rerun(model_type, sid, seed=0):
+def rerun(model_type, sid, seed=0, noise=False, sigma=0):
 	rng = np.random.RandomState(seed=seed)
 	human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
@@ -18,7 +18,7 @@ def rerun(model_type, sid, seed=0):
 	columns = ['type', 'sid', 'trial', 'network', 'stage', 'who', 'color', 'degree', 'RD', 'action', 'expectation']
 	for trial in trials:
 		for stage in stages:
-			expectations = get_expectations(model_type, params, trial, stage, sid)
+			expectations = get_expectations(model_type, params, trial, stage, sid, noise=noise, sigma=sigma, rng=rng)
 			final_expectation = expectations[-1]
 			prob = scipy.special.expit(inv_temp*final_expectation)
 			action = 1 if rng.uniform(0,1) < prob else -1
@@ -51,15 +51,28 @@ def rerun(model_type, sid, seed=0):
 	return dynamics_data
 
 
+def get_mean_accuracy(data, sid):
+	human2 = pd.read_pickle("data/human2.pkl").query("sid==@sid")
+	corrects = []
+	for trial in human2['trial'].unique():
+		sum_private = human2.query("trial==@trial")['sum private'].to_numpy()[-1]
+		action = data.query("sid==@sid & trial==@trial")['action'].to_numpy()[-1]
+		correct = 1 if np.sign(action)==np.sign(sum_private) else 0
+		corrects.append(correct)
+	return np.mean(corrects)
+
+
 def noise_rerun(model_type, sid, sigmas, seed=0):
 	rng = np.random.RandomState(seed=seed)
 	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
 	dfs = []
-	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2']
+	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2', 'mean accuracy']
 	for sigma in sigmas:
+		dynamics = rerun(model_type, sid, seed=seed, noise=True, sigma=sigma)
 		NLL = likelihood(params, model_type, sid, noise=True, sigma=sigma)
 		mcfadden_r2 = compute_mcfadden(NLL, sid)
-		dfs.append(pd.DataFrame([[model_type, sid, sigma, NLL, mcfadden_r2]], columns=columns))
+		mean_accuracy = get_mean_accuracy(dynamics, sid)
+		dfs.append(pd.DataFrame([[model_type, sid, sigma, NLL, mcfadden_r2, mean_accuracy]], columns=columns))
 	noise_data = pd.concat(dfs, ignore_index=True)
 	noise_data.to_pickle(f"data/{model_type}_{sid}_noise.pkl")
 	return noise_data
@@ -67,7 +80,7 @@ def noise_rerun(model_type, sid, sigmas, seed=0):
 if __name__ == '__main__':
 	model_type = sys.argv[1]
 	sid = int(sys.argv[2])
-	sigmas = np.arange(0, 0.5, 0.01)
+	sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
 	choice_data = rerun(model_type, sid)
 	noise_data = noise_rerun(model_type, sid, sigmas)
