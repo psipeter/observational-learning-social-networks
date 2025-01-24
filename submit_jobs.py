@@ -4,7 +4,10 @@ import subprocess
 import time
 
 model_type = sys.argv[1]
-sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
+if model_type in ['bayes', 'RL']:
+   sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
+else:
+   sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:

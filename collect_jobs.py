@@ -7,7 +7,10 @@ label = sys.argv[2]
 if len(sys.argv)>2:
 	noise = True
 
-sids = pd.read_pickle("data/human.pkl")['sid'].unique()
+if model_type in ['bayes', 'RL']:
+   sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
+else:
+   sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
 dfs1 = []
 dfs2 = []
 dfs3 = []

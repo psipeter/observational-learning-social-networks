@@ -11,7 +11,10 @@ def rerun_carrabin(model_type, sid):
 	human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
 	stages = human['stage'].unique()
-	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
+	if model_type in ['bayes']:
+		params = []
+	else:
+		params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
 	dfs = []
 	columns = ['type', 'sid', 'trial', 'stage', 'color', 'response']
 	for trial in trials:
@@ -99,7 +102,7 @@ if __name__ == '__main__':
 	sid = int(sys.argv[2])
 	sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
-	if model_type in ['RL']:
+	if model_type in ['bayes', 'RL']:
 		choice_data = rerun_carrabin(model_type, sid)
 		print(choice_data)
 	else:

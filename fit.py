@@ -40,6 +40,9 @@ def get_param_init_bounds(model_type):
     if model_type in ['DGn']:
         param0 = [1.0]
         bounds = [(0,30)]
+    if model_type in ['bayes']:  # Carrabin
+        param0 = []
+        bounds = []  
     if model_type in ['RL']:  # Carrabin
         param0 = [0.5]
         bounds = [(0,1)]        
