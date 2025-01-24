@@ -105,7 +105,7 @@ if __name__ == '__main__':
 	sid = int(sys.argv[2])
 	sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
-    if model_type in ['bayes', 'RL', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+	if model_type in ['bayes', 'RL', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
 		choice_data = rerun_carrabin(model_type, sid)
 		print(choice_data)
 	else:
