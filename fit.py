@@ -26,6 +26,8 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'z', 'inv_temp']
     if model_type in ['DGn']:
         param_names = ['type', 'sid', 'inv_temp']
+    if model_type in ['RL']:
+        param_names = ['type', 'sid', 'alpha']
     return param_names
 
 def get_param_init_bounds(model_type):
@@ -38,7 +40,37 @@ def get_param_init_bounds(model_type):
     if model_type in ['DGn']:
         param0 = [1.0]
         bounds = [(0,30)]
+    if model_type in ['RL']:  # Carrabin
+        param0 = [0.5]
+        bounds = [(0,1)]        
     return param0, bounds
+
+def get_expectations_carrabin(model_type, params, sid, trial, stage):
+    human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    if model_type == 'bayes':
+        subdata = human.query("trial==@trial & stage<=@stage")
+        reds = subdata.query("color==1")['color'].size
+        p_star = (reds+1)/(stage+2)
+        expectation = 2*p_star-1
+    if model_type == 'bayesPE':
+        subdata = human.query("trial==@trial & stage<=@stage")
+        p_star = 0.5
+        for stg in range(stage):
+            s_old = stg
+            s_new = stg + 1
+            color = subdata.query("stage==@s_new")['color'].unique()[0]
+            delta = (1-p_star)/(s_old+3) if color==1 else -p_star/(s_old+3)
+            p_star += delta
+        expectation = 2*p_star-1
+    if model_type == 'RL':
+        subdata = human.query("trial==@trial & stage<=@stage")
+        colors = subdata['color'].to_numpy()
+        expectation = 0
+        alpha = params[0]
+        for color in colors:
+            error = color - expectation
+            expectation += alpha*error
+    return expectation
 
 def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
@@ -98,6 +130,19 @@ def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0
             expectations.append(expectation)
     return expectations
 
+def RMSE(params, model_type, sid):  # Carrabin loss function
+    human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    errors = []
+    for trial in trials:
+        for stage in stages:
+            expectation = get_expectations_carrabin(model_type, params, sid, trial, stage)
+            response = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
+            errors.append(np.square(response - expectation))
+    rmse = np.sqrt(np.mean(errors))
+    return rmse
+
 def likelihood(params, model_type, sid, noise=False, sigma=0):
     NLL = 0
     human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
@@ -112,6 +157,26 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
             prob = scipy.special.expit(inv_temp*final_expectation)
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
+
+def fit_carrabin(model_type, sid):
+    param0, bounds = get_param_init_bounds(model_type)
+    result = scipy.optimize.minimize(
+        fun=RMSE,
+        x0=param0,
+        args=(model_type, sid),
+        bounds=bounds,
+        options={'disp':False})
+    rmse = result.fun
+    # Save Results and Best Fit Parameters
+    performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
+    performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+    param_names = get_param_names(model_type)
+    params = list(result.x)
+    params.insert(0, sid)
+    params.insert(0, model_type)
+    fitted_params = pd.DataFrame([params], columns=param_names)
+    fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+    return performance_data, fitted_params
 
 def stat_fit_scipy(model_type, sid):
     param0, bounds = get_param_init_bounds(model_type)
@@ -139,7 +204,10 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    performance_data, fitted_params = stat_fit_scipy(model_type, sid)
+    if model_type in ['RL']:
+        performance_data, fitted_params = fit_carrabin(model_type, sid)
+    else:
+        performance_data, fitted_params = stat_fit_scipy(model_type, sid)
     print(performance_data)
     print(fitted_params)
     end = time.time()

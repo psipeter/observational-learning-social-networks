@@ -4,8 +4,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import sys
-from fit import get_expectations, likelihood, compute_mcfadden
+from fit import get_expectations_carrabin, get_expectations, likelihood, compute_mcfadden
 import time
+
+def rerun_carrabin(model_type, sid):
+	human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+	trials = human['trial'].unique()
+	stages = human['stage'].unique()
+	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
+	dfs = []
+	columns = ['type', 'sid', 'trial', 'stage', 'color', 'response']
+	for trial in trials:
+		for stage in stages:
+			response = get_expectations_carrabin(model_type, params, sid, trial, stage)
+			subdata = human.query("trial==@trial & stage==@stage")
+			color = subdata['color'].unique()[0]
+			dfs.append(pd.DataFrame([[model_type, sid, trial, stage, color, response]], columns=columns))
+	dynamics_data = pd.concat(dfs, ignore_index=True)
+	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
+	return dynamics_data
 
 def rerun(model_type, sid, seed=0, noise=False, sigma=0):
 	rng = np.random.RandomState(seed=seed)
@@ -82,9 +99,13 @@ if __name__ == '__main__':
 	sid = int(sys.argv[2])
 	sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
-	choice_data = rerun(model_type, sid)
-	noise_data = noise_rerun(model_type, sid, sigmas)
-	print(choice_data)
-	print(noise_data)
+	if model_type in ['RL']:
+		choice_data = rerun_carrabin(model_type, sid)
+		print(choice_data)
+	else:
+		choice_data = rerun(model_type, sid)
+		noise_data = noise_rerun(model_type, sid, sigmas)
+		print(choice_data)
+		print(noise_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")
