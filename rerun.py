@@ -16,13 +16,16 @@ def rerun_carrabin(model_type, sid):
 	else:
 		params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
 	dfs = []
-	columns = ['type', 'sid', 'trial', 'stage', 'color', 'response']
+	columns = ['type', 'sid', 'trial', 'stage', 'color', 'response', 'delta response']
 	for trial in trials:
+		response_old = 0
 		for stage in stages:
 			response = get_expectations_carrabin(model_type, params, sid, trial, stage)
+			delta_response = np.abs(response - response_old)
+			response_old = response
 			subdata = human.query("trial==@trial & stage==@stage")
 			color = subdata['color'].unique()[0]
-			dfs.append(pd.DataFrame([[model_type, sid, trial, stage, color, response]], columns=columns))
+			dfs.append(pd.DataFrame([[model_type, sid, trial, stage, color, response, delta_response]], columns=columns))
 	dynamics_data = pd.concat(dfs, ignore_index=True)
 	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
 	return dynamics_data
