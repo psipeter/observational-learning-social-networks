@@ -4,7 +4,7 @@ import subprocess
 
 model_type = sys.argv[1]
 label = sys.argv[2]
-noise = True if len(sys.argv)>2 else False
+noise = True if len(sys.argv)>3 else False
 
 if model_type in ['bayes', 'RL']:
    sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
