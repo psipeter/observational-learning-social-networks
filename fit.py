@@ -30,6 +30,16 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'alpha']
     if model_type in ['bayes']:
         param_names = ['type', 'sid']
+    if model_type in ['NC_n']:
+        param_names = ['type', 'sid', 'mu', 'sigma']
+    if model_type in ['NC_nn']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
+    if model_type in ['NC_nnn']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'v1', 'v2']
+    if model_type in ['NC_nln']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'v1', 'v2']
+    if model_type in ['NC_nll']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'v1', 'v2']
     return param_names
 
 def get_param_init_bounds(model_type):
@@ -47,10 +57,25 @@ def get_param_init_bounds(model_type):
         bounds = []  
     if model_type in ['RL']:  # Carrabin
         param0 = [0.5]
-        bounds = [(0,1)]        
+        bounds = [(0,1)]
+    if model_type in ['NC_n']:
+        param0 = [0.1, 0.0]
+        bounds = [(0,1), (0,0.01)]
+    if model_type in ['NC_nn']:
+        param0 = [0.1, 0.0, 0.0]
+        bounds = [(0,1), (0,0.01), (0,0.01)]
+    if model_type in ['NC_nnn']:
+        param0 = [0.1, 0.0, 0.0, 0.0]
+        bounds = [(0,1), (0,0.01), (0,0.01), (0,0.01)]
+    if model_type in ['NC_nln']:
+        param0 = [0.1, 0.0, 0.0, 0.0]
+        bounds = [(0,1), (0,0.01), (0,0.01), (0,0.01)]
+    if model_type in ['NC_nll']:
+        param0 = [0.1, 0.0, 0.0, 0.0]
+        bounds = [(0,1), (0,0.01), (0,0.01), (0,0.01)]
     return param0, bounds
 
-def get_expectations_carrabin(model_type, params, sid, trial, stage):
+def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
     if model_type == 'bayes':
         subdata = human.query("trial==@trial & stage<=@stage")
@@ -75,6 +100,45 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage):
         for color in colors:
             error = color - expectation
             expectation += alpha*error
+    if model_type in ['NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+        subdata = human.query("trial==@trial & stage<=@stage")
+        colors = subdata['color'].to_numpy()
+        p = 0.5
+        r = 0.5
+        for color in colors:
+            if model_type == 'NC_n': # normally distributed learning rate, no response noise
+                LR = rng.normal(params[0], params[1])
+                r += LR*color
+                p = r
+                p = np.clip(p, 0, 1)
+            if model_type == 'NC_nn': # normally distributed learning rate, normally distributed response noise: Line 8
+                LR = rng.normal(params[0], params[1])
+                pE = rng.normal(0, params[2])
+                r += LR*color
+                p = r + pE
+                p = np.clip(p, 0, 1)
+            if model_type == 'NC_nnn': # normally distributed learning rate, normally distributed state AND response noise: Line 10
+                LR = rng.normal(params[0], params[1])
+                rE = rng.normal(0, params[2])
+                pE = rng.normal(0, params[3])
+                r += LR*color + rE
+                p = r + pE
+                p = np.clip(p, 0, 1)
+            if model_type == 'NC_nln': # normally * log-normally distributed learning rate, normally distributed response noise: Line 11
+                nLR = rng.normal(np.log(params[0]), params[1])
+                lLR = np.exp(rng.normal(0, params[2]))
+                pE = rng.normal(0, params[3])
+                r += nLR*lLR*color
+                p = r + pE
+                p = np.clip(p, 0, 1)
+            if model_type == 'NC_nll': # normally distributed learning rate, log-normally distributed state AND response noise: Line 12
+                LR = rng.normal(params[0], params[1])
+                rE = rng.normal(0, params[2])
+                pE = np.exp(rng.normal(0, params[3]))
+                r += LR*color + rE
+                p += (r-p)*pE
+                p = np.clip(p, 0, 1)
+        expectation = 2*p-1
     return expectation
 
 def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
@@ -213,7 +277,7 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['bayes', 'RL']:
+    if model_type in ['bayes', 'RL', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         performance_data, fitted_params = fit_carrabin(model_type, sid)
     else:
         performance_data, fitted_params = stat_fit_scipy(model_type, sid)

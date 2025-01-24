@@ -3,7 +3,7 @@ import pandas as pd
 import subprocess
 
 model_type = sys.argv[1]
-if model_type in ['bayes', 'RL']:
+if model_type in ['bayes', 'RL', 'NC_n', 'NC_nnn', 'NC_nln', 'NC_nll']:
    sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 else:
    sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
