@@ -28,6 +28,8 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'inv_temp']
     if model_type in ['RL']:
         param_names = ['type', 'sid', 'alpha']
+    if model_type in ['bayes']:
+        param_names = ['type', 'sid']
     return param_names
 
 def get_param_init_bounds(model_type):
@@ -162,19 +164,23 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
     return NLL
 
 def fit_carrabin(model_type, sid):
-    param0, bounds = get_param_init_bounds(model_type)
-    result = scipy.optimize.minimize(
-        fun=RMSE,
-        x0=param0,
-        args=(model_type, sid),
-        bounds=bounds,
-        options={'disp':False})
-    rmse = result.fun
+    if model_type in ['bayes']:
+        params = []
+        rmse = RMSE(params, model_type, sid)
+    else:
+        param0, bounds = get_param_init_bounds(model_type)
+        result = scipy.optimize.minimize(
+            fun=RMSE,
+            x0=param0,
+            args=(model_type, sid),
+            bounds=bounds,
+            options={'disp':False})
+        rmse = result.fun
+        params = list(result.x)
     # Save Results and Best Fit Parameters
     performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
     performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
     param_names = get_param_names(model_type)
-    params = list(result.x)
     params.insert(0, sid)
     params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
@@ -207,7 +213,7 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['RL']:
+    if model_type in ['bayes', 'RL']:
         performance_data, fitted_params = fit_carrabin(model_type, sid)
     else:
         performance_data, fitted_params = stat_fit_scipy(model_type, sid)
