@@ -28,6 +28,10 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'inv_temp']
     if model_type in ['RL']:
         param_names = ['type', 'sid', 'alpha']
+    if model_type in ['RL_n']:
+        param_names = ['type', 'sid', 'mu', 'sigma']
+    if model_type in ['RL_nn']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
     if model_type in ['bayes']:
         param_names = ['type', 'sid']
     if model_type in ['NC_n']:
@@ -52,15 +56,21 @@ def get_param_init_bounds(model_type):
     if model_type in ['DGn']:
         param0 = [1.0]
         bounds = [(0,30)]
-    if model_type in ['bayes']:  # Carrabin
+    if model_type in ['bayes']:
         param0 = []
         bounds = []  
-    if model_type in ['RL']:  # Carrabin
+    if model_type in ['RL']:
         param0 = [0.5]
         bounds = [(0,1)]
+    if model_type in ['RL_n']:
+        param0 = [0.1, 0.02]
+        bounds = [(0,1), (0.02,0.02)]
+    if model_type in ['RL_nn']:
+        param0 = [0.1, 0.0, 0.0]
+        bounds = [(0,1), (0,0.01), (0,0.01)]
     if model_type in ['NC_n']:
-        param0 = [0.1, 0.0]
-        bounds = [(0,1), (0,0.01)]
+        param0 = [0.1, 0.02]
+        bounds = [(0,1), (0.02, 0.02)]
     if model_type in ['NC_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
@@ -92,14 +102,26 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
             delta = (1-p_star)/(s_old+3) if color==1 else -p_star/(s_old+3)
             p_star += delta
         expectation = 2*p_star-1
-    if model_type == 'RL':
+    if model_type in ['RL', 'RL_n', 'RL_nn']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         expectation = 0
-        alpha = params[0]
         for color in colors:
-            error = color - expectation
-            expectation += alpha*error
+            if model_type=='RL':
+                LR = params[0]
+                error = color - expectation
+                expectation += LR*error
+            elif model_type=='RL_n':
+                LR = rng.normal(params[0], params[1])
+                LR = np.clip(LR, 0, 1)
+                error = color - expectation
+                expectation += LR*error
+            elif model_type=='RL_nn':
+                LR = rng.normal(params[0], params[1])
+                rE = rng.normal(0, params[2])
+                error = color - expectation
+                expectation += LR*error + rE
+                expectation = np.clip(expectation, -1, 1)
     if model_type in ['NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
@@ -277,7 +299,7 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['bayes', 'RL', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['bayes', 'RL', 'RL_n', 'RL_nn', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         performance_data, fitted_params = fit_carrabin(model_type, sid)
     else:
         performance_data, fitted_params = stat_fit_scipy(model_type, sid)
