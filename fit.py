@@ -34,6 +34,8 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
     if model_type in ['bayes']:
         param_names = ['type', 'sid']
+    if model_type in ['NC']:
+        param_names = ['type', 'sid', 'alpha']
     if model_type in ['NC_n']:
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['NC_nn']:
@@ -63,14 +65,17 @@ def get_param_init_bounds(model_type):
         param0 = [0.5]
         bounds = [(0,1)]
     if model_type in ['RL_n']:
-        param0 = [0.1, 0.02]
-        bounds = [(0,1), (0.02,0.02)]
+        param0 = [0.1, 0.01]
+        bounds = [(0,1), (0.01,0.01)]
     if model_type in ['RL_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
+    if model_type in ['NC']:
+        param0 = [0.1]
+        bounds = [(0,1)]
     if model_type in ['NC_n']:
-        param0 = [0.1, 0.02]
-        bounds = [(0,1), (0.02, 0.02)]
+        param0 = [0.1, 0.01]
+        bounds = [(0,1), (0.01, 0.01)]
     if model_type in ['NC_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
@@ -122,14 +127,20 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 error = color - expectation
                 expectation += LR*error + rE
                 expectation = np.clip(expectation, -1, 1)
-    if model_type in ['NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['NC', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         p = 0.5
         r = 0.5
         for color in colors:
+            if model_type == 'NC': # fixed learning rate, no response noise
+                LR = params[0]
+                r += LR*color
+                p = r
+                p = np.clip(p, 0, 1)
             if model_type == 'NC_n': # normally distributed learning rate, no response noise
                 LR = rng.normal(params[0], params[1])
+                LR = np.clip(LR, 0, 1)
                 r += LR*color
                 p = r
                 p = np.clip(p, 0, 1)
@@ -299,7 +310,7 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['bayes', 'RL', 'RL_n', 'RL_nn', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['bayes', 'RL', 'RL_n', 'RL_nn', 'NC', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         performance_data, fitted_params = fit_carrabin(model_type, sid)
     else:
         performance_data, fitted_params = stat_fit_scipy(model_type, sid)
