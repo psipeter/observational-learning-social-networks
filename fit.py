@@ -111,6 +111,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         expectation = 0
+        # rng=np.random.RandomState(seed=0)
         for color in colors:
             if model_type=='RL':
                 LR = params[0]
@@ -239,7 +240,7 @@ def RMSE(params, model_type, sid):  # Carrabin loss function
     errors = []
     for trial in trials:
         for stage in stages:
-            expectation = get_expectations_carrabin(model_type, params, sid, trial, stage)
+            expectation = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=trial))
             response = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
             errors.append(np.square(response - expectation))
     rmse = np.sqrt(np.mean(errors))
