@@ -92,6 +92,12 @@ def get_param_init_bounds(model_type):
 
 def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    if model_type == 'NEF_WM':
+        nef_data = pd.read_pickle(f"data/NEF_WM_carrabin_{sid}_estimates.pkl")
+        expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].unique()[0]
+    if model_type == 'NEF_RL':
+        nef_data = pd.read_pickle(f"data/NEF_RL_carrabin_{sid}_estimates.pkl")
+        expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].unique()[0]
     if model_type == 'bayes':
         subdata = human.query("trial==@trial & stage<=@stage")
         reds = subdata.query("color==1")['color'].size
@@ -189,10 +195,10 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
 def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     if model_type == 'NEF_WM':
-        nef_data = pd.read_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
+        nef_data = pd.read_pickle(f"data/NEF_WM_jiang_{sid}_estimates.pkl")
         expectations = nef_data.query("trial==@trial & stage<=@stage")['estimate'].to_numpy()
     if model_type == 'NEF_RL':
-        nef_data = pd.read_pickle(f"data/NEF_RL_{sid}_estimates.pkl")
+        nef_data = pd.read_pickle(f"data/NEF_RL_jiang_{sid}_estimates.pkl")
         expectations = nef_data.query("trial==@trial & stage<=@stage")['estimate'].to_numpy()
     if model_type == 'RLz':
         z = params[0]

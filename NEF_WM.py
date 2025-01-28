@@ -5,40 +5,56 @@ import nengo
 import pandas as pd
 
 class Environment():
-    def __init__(self, sid, trial, t_show=1.0, t_buffer=1.0, dt=0.001):
+    def __init__(self, dataset, sid, trial, t_show=1.0, t_buffer=1.0, dt=0.001):
         self.dt = dt
         self.sid = sid
         self.trial = trial
-        self.empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid & trial==@trial")
+        self.dataset = dataset
         self.t_show = t_show
         self.t_buffer = t_buffer
         self.T = self.t_show + self.t_buffer
+        if self.dataset=='jiang':
+            self.empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid & trial==@trial")
+            self.n_neighbors = len(self.empirical['who'].unique()) - 1
+            self.Tall = self.T + 3*self.n_neighbors*self.T - self.dt
+            self.stages = range(4)
+        if self.dataset=='carrabin':
+            self.empirical = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid & trial==@trial")
+            self.stages = range(1, 6)
+            self.Tall = 5*self.T - self.dt
         self.color = 0
         self.degree = 0
         self.stage = 0
-        self.n_neighbors = len(self.empirical['who'].unique()) - 1
-        self.Tall = self.T + 3*self.n_neighbors*self.T - self.dt
         # create input arrays
         self.colors = []
         self.degrees = []
         tt1 = int(self.t_show / self.dt)
         tt2 = int(self.t_buffer / self.dt)
-        for stage in range(4):
-            if stage==0:
-                color = self.empirical.query("stage==@stage")['color'].to_numpy()[0]
+        if self.dataset=='jiang':
+            for stage in self.stages:
+                if stage==0:
+                    color = self.empirical.query("stage==@stage")['color'].to_numpy()[0]
+                    degree = 0
+                    self.colors.extend(color * np.ones((tt1, 1)))
+                    self.colors.extend(np.zeros((tt2, 1)))
+                    self.degrees.extend(degree * np.ones((tt1, 1)))
+                    self.degrees.extend(np.zeros((tt2, 1)))
+                else:
+                    for n in range(self.n_neighbors):
+                        color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
+                        degree = 0 if stage==1 else self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
+                        self.colors.extend(color * np.ones((tt1, 1)))
+                        self.colors.extend(np.zeros((tt2, 1)))
+                        self.degrees.extend(degree * np.ones((tt1, 1)))
+                        self.degrees.extend(np.zeros((tt2, 1)))
+        if self.dataset=='carrabin':
+            for stage in self.stages:
+                color = self.empirical.query("stage==@stage")['color'].unique()[0]
                 degree = 0
                 self.colors.extend(color * np.ones((tt1, 1)))
                 self.colors.extend(np.zeros((tt2, 1)))
                 self.degrees.extend(degree * np.ones((tt1, 1)))
                 self.degrees.extend(np.zeros((tt2, 1)))
-            else:
-                for n in range(self.n_neighbors):
-                    color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
-                    degree = 0 if stage==1 else self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
-                    self.colors.extend(color * np.ones((tt1, 1)))
-                    self.colors.extend(np.zeros((tt2, 1)))
-                    self.degrees.extend(degree * np.ones((tt1, 1)))
-                    self.degrees.extend(np.zeros((tt2, 1)))
         self.colors = np.array(self.colors).flatten()
         self.degrees = np.array(self.degrees).flatten()
                     
@@ -158,26 +174,35 @@ def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(sid, z, save=True):
-    empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+def run_WM(dataset, sid, z, save=True):
+    if dataset=='jiang':
+        empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
+    if dataset=='carrabin':
+        empirical = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
-    for trial in trials:
+    for trial in trials[:3]:
         print(f"sid {sid}, trial {trial}")
-        env = Environment(sid=sid, trial=trial)
+        env = Environment(dataset=dataset, sid=sid, trial=trial)
         net, sim = simulate_WM(env=env, seed_net=sid, z=z, progress_bar=False)
         n_observations = 0
-        for stage in range(4):
+        for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")
-            observations = subdata['color'].to_numpy()
-            for o in range(len(observations)):
-                n_observations += 1
-                tidx = int((n_observations*env.T)/env.dt)-2
+            if dataset=='jiang':
+                observations = subdata['color'].to_numpy()
+                for o in range(len(observations)):
+                    n_observations += 1
+                    tidx = int((n_observations*env.T)/env.dt)-2
+                    estimate = sim.data[net.probe_memory][tidx][0]
+                    df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
+                    dfs.append(df)
+            elif dataset=='carrabin':
+                tidx = int((stage*env.T)/env.dt)-2
                 estimate = sim.data[net.probe_memory][tidx][0]
                 df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
-        data = pd.concat(dfs, ignore_index=True)
-        if save:
-            data.to_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
+    data = pd.concat(dfs, ignore_index=True)
+    if save:
+        data.to_pickle(f"data/NEF_WM_{dataset}_{sid}_estimates.pkl")
     return data
