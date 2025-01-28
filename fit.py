@@ -28,7 +28,7 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'inv_temp']
     if model_type in ['RL']:
         param_names = ['type', 'sid', 'alpha']
-    if model_type in ['RL_n']:
+    if model_type in ['RL_n', 'RL_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['RL_nn']:
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
@@ -36,7 +36,7 @@ def get_param_names(model_type):
         param_names = ['type', 'sid']
     if model_type in ['NC']:
         param_names = ['type', 'sid', 'alpha']
-    if model_type in ['NC_n']:
+    if model_type in ['NC_n', 'NC_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['NC_nn']:
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
@@ -64,7 +64,7 @@ def get_param_init_bounds(model_type):
     if model_type in ['RL']:
         param0 = [0.5]
         bounds = [(0,1)]
-    if model_type in ['RL_n']:
+    if model_type in ['RL_n', 'RL_n2']:
         param0 = [0.1, 0.01]
         bounds = [(0,1), (0.01,0.01)]
     if model_type in ['RL_nn']:
@@ -73,7 +73,7 @@ def get_param_init_bounds(model_type):
     if model_type in ['NC']:
         param0 = [0.1]
         bounds = [(0,1)]
-    if model_type in ['NC_n']:
+    if model_type in ['NC_n', 'NC_n2']:
         param0 = [0.1, 0.01]
         bounds = [(0,1), (0.01, 0.01)]
     if model_type in ['NC_nn']:
@@ -107,7 +107,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
             delta = (1-p_star)/(s_old+3) if color==1 else -p_star/(s_old+3)
             p_star += delta
         expectation = 2*p_star-1
-    if model_type in ['RL', 'RL_n', 'RL_nn']:
+    if model_type in ['RL', 'RL_n', 'RL_n2', 'RL_nn']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         expectation = 0
@@ -122,13 +122,18 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 LR = np.clip(LR, 0, 1)
                 error = color - expectation
                 expectation += LR*error
+            elif model_type=='RL_n2':
+                LR = params[0]
+                eps = rng.normal(0, params[1])
+                error = color - expectation
+                expectation += LR*error + eps
             elif model_type=='RL_nn':
                 LR = rng.normal(params[0], params[1])
                 rE = rng.normal(0, params[2])
                 error = color - expectation
                 expectation += LR*error + rE
                 expectation = np.clip(expectation, -1, 1)
-    if model_type in ['NC', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         p = 0.5
@@ -143,6 +148,12 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 LR = rng.normal(params[0], params[1])
                 LR = np.clip(LR, 0, 1)
                 r += LR*color
+                p = r
+                p = np.clip(p, 0, 1)
+            if model_type == 'NC_n2': # fixed learning rate, normally distributed cognitive state noise, no response noise
+                LR = params[0]
+                eps = rng.normal(0, params[1])
+                r += LR*color + eps
                 p = r
                 p = np.clip(p, 0, 1)
             if model_type == 'NC_nn': # normally distributed learning rate, normally distributed response noise: Line 8
@@ -311,7 +322,7 @@ if __name__ == '__main__':
     sid = int(sys.argv[2])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['bayes', 'RL', 'RL_n', 'RL_nn', 'NC', 'NC_n', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['bayes', 'RL', 'RL_n', 'RL_n2', 'RL_nn', 'NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         performance_data, fitted_params = fit_carrabin(model_type, sid)
     else:
         performance_data, fitted_params = stat_fit_scipy(model_type, sid)
