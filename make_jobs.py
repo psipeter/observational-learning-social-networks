@@ -4,6 +4,7 @@ import subprocess
 
 dataset = sys.argv[1]
 model_type = sys.argv[2]
+paramfile = sys.argv[3]
 if dataset=='carrabin':
    sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 elif dataset=='jiang':
@@ -11,25 +12,27 @@ elif dataset=='jiang':
 
 for sid in sids:
    if model_type in ['NEF_WM']:
-      paramfile = sys.argv[2]
-      params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
-      z = params['z'].unique()[0] if sys.argv[3]=='load' else float(sys.argv[3])
-      inv_temp = params['inv_temp'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
-      fit_string = f"python run.py {model_type} {sid} {paramfile} {z} {inv_temp}"
-      rerun_string = f"python rerun.py {model_type} {sid}"
+      if dataset=='jiang':
+         params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
+         z = params['z'].unique()[0] if sys.argv[3]=='load' else float(sys.argv[3])
+         inv_temp = params['inv_temp'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
+         fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile} {z} {inv_temp}"
+      elif dataset=='carrabin':
+         fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile}"
+      rerun_string = f"python rerun.py {dataset} {model_type} {sid}"
       file_string = f'nef_{sid}.sh'
    elif model_type in ['NEF_RL']:
-      paramfile = sys.argv[2]
+      paramfile = sys.argv[3]
       params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
       z = params['z'].unique()[0] if sys.argv[3]=='load' else float(sys.argv[3])
       b = params['b'].unique()[0] if sys.argv[4]=='load' else float(sys.argv[4])
       inv_temp = params['inv_temp'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
-      fit_string = f"python run.py {model_type} {sid} {paramfile} {z} {b} {inv_temp}"
-      rerun_string = f"python rerun.py {model_type} {sid}"
+      fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile} {z} {b} {inv_temp}"
+      rerun_string = f"python rerun.py {dataset} {model_type} {sid}"
       file_string = f'nef_{sid}.sh'
    else:
-      fit_string = f"python fit.py {model_type} {sid}"
-      rerun_string = f"python rerun.py {model_type} {sid}"
+      fit_string = f"python fit.py {dataset} {model_type} {sid}"
+      rerun_string = f"python rerun.py {dataset} {model_type} {sid}"
       file_string = f'fit_{sid}.sh'
    with open (file_string, 'w') as rsh:
       rsh.write('''#!/bin/bash''')

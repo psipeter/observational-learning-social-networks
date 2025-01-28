@@ -182,7 +182,7 @@ def run_WM(dataset, sid, z, save=True):
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
-    for trial in trials[:3]:
+    for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial)
         net, sim = simulate_WM(env=env, seed_net=sid, z=z, progress_bar=False)

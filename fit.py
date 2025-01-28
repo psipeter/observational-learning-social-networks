@@ -192,7 +192,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
         expectation = 2*p-1
     return expectation
 
-def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
+def get_expectations_jiang(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     if model_type == 'NEF_WM':
         nef_data = pd.read_pickle(f"data/NEF_WM_jiang_{sid}_estimates.pkl")
@@ -271,7 +271,7 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
     inv_temp = params[-1]
     for trial in trials:
         for stage in stages:
-            expectations = get_expectations(model_type, params, trial, stage, sid, noise=noise, sigma=sigma)
+            expectations = get_expectations_jiang(model_type, params, trial, stage, sid, noise=noise, sigma=sigma)
             final_expectation = expectations[-1]
             act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
             prob = scipy.special.expit(inv_temp*final_expectation)
@@ -294,12 +294,12 @@ def fit_carrabin(model_type, sid):
         params = list(result.x)
     # Save Results and Best Fit Parameters
     performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
-    performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+    performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
     param_names = get_param_names(model_type)
     params.insert(0, sid)
     params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
-    fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+    fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
 def fit_jiang(model_type, sid):
@@ -314,13 +314,13 @@ def fit_jiang(model_type, sid):
     mcfadden_r2 = compute_mcfadden(NLL, sid)
     # Save Results and Best Fit Parameters
     performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=['type', 'sid', 'NLL', 'McFadden R2'])
-    performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+    performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
     param_names = get_param_names(model_type)
     params = list(result.x)
     params.insert(0, sid)
     params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
-    fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+    fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
 if __name__ == '__main__':

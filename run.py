@@ -25,12 +25,12 @@ if dataset=='carrabin':
 		param_list = [model_type, sid, mu]
 	rmse = RMSE(params, model_type, sid)
 	performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
-	performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	param_names = get_param_names(model_type)
 	param_list.insert(0, sid)
 	param_list.insert(0, model_type)
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
-	fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
 
 if dataset=='jiang':
 	if model_type=='NEF_WM':
@@ -49,7 +49,7 @@ if dataset=='jiang':
 	mcfadden_r2 = compute_mcfadden(NLL, sid)
 	columns = ['type', 'sid', 'NLL', 'McFadden R2']
 	performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]],columns=columns)
-	performance_data.to_pickle(f"data/{model_type}_{sid}_performance.pkl")
+	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	param_names = get_param_names(model_type)
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
-	fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
+	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")

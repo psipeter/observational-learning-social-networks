@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import sys
-from fit import get_expectations_carrabin, get_expectations, likelihood, compute_mcfadden
+from fit import get_expectations_carrabin, get_expectations_jiang, likelihood, compute_mcfadden
 import time
 
 def rerun_carrabin(model_type, sid):
@@ -14,7 +14,7 @@ def rerun_carrabin(model_type, sid):
 	if model_type in ['bayes']:
 		params = []
 	else:
-		params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
+		params = pd.read_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl").loc[0].to_numpy()[2:]
 	dfs = []
 	columns = ['type', 'sid', 'trial', 'stage', 'color', 'response', 'delta response']
 	for trial in trials:
@@ -27,7 +27,7 @@ def rerun_carrabin(model_type, sid):
 			color = subdata['color'].unique()[0]
 			dfs.append(pd.DataFrame([[model_type, sid, trial, stage, color, response, delta_response]], columns=columns))
 	dynamics_data = pd.concat(dfs, ignore_index=True)
-	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
+	dynamics_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_dynamics.pkl")
 	return dynamics_data
 
 def rerun_jiang(model_type, sid, seed=0, noise=False, sigma=0):
@@ -41,7 +41,7 @@ def rerun_jiang(model_type, sid, seed=0, noise=False, sigma=0):
 	columns = ['type', 'sid', 'trial', 'network', 'stage', 'who', 'color', 'degree', 'RD', 'action', 'expectation']
 	for trial in trials:
 		for stage in stages:
-			expectations = get_expectations(model_type, params, trial, stage, sid, noise=noise, sigma=sigma, rng=rng)
+			expectations = get_expectations_jiang(model_type, params, trial, stage, sid, noise=noise, sigma=sigma, rng=rng)
 			final_expectation = expectations[-1]
 			prob = scipy.special.expit(inv_temp*final_expectation)
 			action = 1 if rng.uniform(0,1) < prob else -1
@@ -70,7 +70,7 @@ def rerun_jiang(model_type, sid, seed=0, noise=False, sigma=0):
 				]], columns=columns)
 				dfs.append(df)
 	dynamics_data = pd.concat(dfs, ignore_index=True)
-	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
+	dynamics_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_dynamics.pkl")
 	return dynamics_data
 
 
@@ -97,13 +97,13 @@ def noise_rerun(model_type, sid, sigmas, seed=0):
 		mean_accuracy = get_mean_accuracy(dynamics, sid)
 		dfs.append(pd.DataFrame([[model_type, sid, sigma, NLL, mcfadden_r2, mean_accuracy]], columns=columns))
 	noise_data = pd.concat(dfs, ignore_index=True)
-	noise_data.to_pickle(f"data/{model_type}_{sid}_noise.pkl")
+	noise_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_noise.pkl")
 	return noise_data
 
 if __name__ == '__main__':
-    dataset = sys.argv[1]
-    model_type = sys.argv[2]
-    sid = int(sys.argv[3])
+	dataset = sys.argv[1]
+	model_type = sys.argv[2]
+	sid = int(sys.argv[3])
 	# sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
 	if dataset=='carrabin':
