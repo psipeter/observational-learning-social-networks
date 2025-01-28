@@ -8,7 +8,7 @@ if model_type in ['bayes', 'RL', 'RL_n', 'RL_n2', 'RL_nn', 'NC', 'NC_n', 'NC_n2'
    sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 else:
    sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
-c = subprocess.run("rm *.out", shell=True)
+# c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:
 	if model_type in ['NEF_WM', 'NEF_RL']:

@@ -65,8 +65,8 @@ def get_param_init_bounds(model_type):
         param0 = [0.5]
         bounds = [(0,1)]
     if model_type in ['RL_n', 'RL_n2']:
-        param0 = [0.1, 0.01]
-        bounds = [(0,1), (0.01,0.01)]
+        param0 = [0.1, 0.05]
+        bounds = [(0,1), (0.0,0.1)]
     if model_type in ['RL_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
@@ -74,8 +74,8 @@ def get_param_init_bounds(model_type):
         param0 = [0.1]
         bounds = [(0,1)]
     if model_type in ['NC_n', 'NC_n2']:
-        param0 = [0.1, 0.01]
-        bounds = [(0,1), (0.01, 0.01)]
+        param0 = [0.1, 0.05]
+        bounds = [(0,1), (0.0, 0.1)]
     if model_type in ['NC_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
@@ -111,7 +111,6 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         expectation = 0
-        # rng=np.random.RandomState(seed=0)
         for color in colors:
             if model_type=='RL':
                 LR = params[0]
@@ -127,6 +126,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 eps = rng.normal(0, params[1])
                 error = color - expectation
                 expectation += LR*error + eps
+                expectation = np.clip(expectation, -1, 1)
             elif model_type=='RL_nn':
                 LR = rng.normal(params[0], params[1])
                 rE = rng.normal(0, params[2])
@@ -152,10 +152,10 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 p = np.clip(p, 0, 1)
             if model_type == 'NC_n2': # fixed learning rate, normally distributed cognitive state noise, no response noise
                 LR = params[0]
-                eps = rng.normal(0, params[1])
+                eps = rng.normal(0, np.square(params[1]))
                 r += LR*color + eps
+                r = np.clip(r, 0, 1)
                 p = r
-                p = np.clip(p, 0, 1)
             if model_type == 'NC_nn': # normally distributed learning rate, normally distributed response noise: Line 8
                 LR = rng.normal(params[0], params[1])
                 pE = rng.normal(0, params[2])
