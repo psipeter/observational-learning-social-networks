@@ -9,7 +9,7 @@ noise = True if len(sys.argv)>3 else False
 if model_type in ['bayes', 'RL', 'RL_n', 'RL_n2', 'RL_nn', 'NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
    sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 else:
-   sids = pd.read_pickle("data/behavior.pkl")['sid'].unique()
+   sids = pd.read_pickle("data/jiang.pkl")['sid'].unique()
 dfs1 = []
 dfs2 = []
 dfs3 = []

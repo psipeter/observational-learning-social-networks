@@ -8,7 +8,7 @@ import time
 
 def compute_mcfadden(NLL, sid):
     null_log_likelihood = 0
-    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     trials = human['trial'].unique()
     stages = human['stage'].unique()
     for trial in trials:
@@ -187,7 +187,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
     return expectation
 
 def get_expectations(model_type, params, trial, stage, sid, noise=False, sigma=0, rng=np.random.RandomState(seed=0)):
-    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     if model_type == 'NEF_WM':
         nef_data = pd.read_pickle(f"data/NEF_WM_{sid}_estimates.pkl")
         expectations = nef_data.query("trial==@trial & stage<=@stage")['estimate'].to_numpy()
@@ -259,7 +259,7 @@ def RMSE(params, model_type, sid):  # Carrabin loss function
 
 def likelihood(params, model_type, sid, noise=False, sigma=0):
     NLL = 0
-    human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+    human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     trials = human['trial'].unique()
     stages = human['stage'].unique()
     inv_temp = params[-1]
@@ -296,7 +296,7 @@ def fit_carrabin(model_type, sid):
     fitted_params.to_pickle(f"data/{model_type}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def stat_fit_scipy(model_type, sid):
+def fit_jiang(model_type, sid):
     param0, bounds = get_param_init_bounds(model_type)
     result = scipy.optimize.minimize(
         fun=likelihood,
@@ -318,14 +318,15 @@ def stat_fit_scipy(model_type, sid):
     return performance_data, fitted_params
 
 if __name__ == '__main__':
-    model_type = sys.argv[1]
-    sid = int(sys.argv[2])
+    dataset = sys.argv[1]
+    model_type = sys.argv[2]
+    sid = int(sys.argv[3])
     start = time.time()
     print(f"fitting {model_type}, {sid}")
-    if model_type in ['bayes', 'RL', 'RL_n', 'RL_n2', 'RL_nn', 'NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if dataset=='carrabin':
         performance_data, fitted_params = fit_carrabin(model_type, sid)
-    else:
-        performance_data, fitted_params = stat_fit_scipy(model_type, sid)
+    elif dataset=='jiang':
+        performance_data, fitted_params = fit_jiang(model_type, sid)
     print(performance_data)
     print(fitted_params)
     end = time.time()

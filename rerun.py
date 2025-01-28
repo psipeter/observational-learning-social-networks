@@ -30,9 +30,9 @@ def rerun_carrabin(model_type, sid):
 	dynamics_data.to_pickle(f"data/{model_type}_{sid}_dynamics.pkl")
 	return dynamics_data
 
-def rerun(model_type, sid, seed=0, noise=False, sigma=0):
+def rerun_jiang(model_type, sid, seed=0, noise=False, sigma=0):
 	rng = np.random.RandomState(seed=seed)
-	human = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
+	human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
 	stages = human['stage'].unique()
 	params = pd.read_pickle(f"data/{model_type}_{sid}_params.pkl").loc[0].to_numpy()[2:]
@@ -75,7 +75,7 @@ def rerun(model_type, sid, seed=0, noise=False, sigma=0):
 
 
 def get_mean_accuracy(data, sid):
-	human2 = pd.read_pickle("data/human2.pkl").query("sid==@sid")
+	human2 = pd.read_pickle("data/jiang2.pkl").query("sid==@sid")
 	corrects = []
 	for trial in human2['trial'].unique():
 		sum_private = human2.query("trial==@trial")['sum private'].to_numpy()[-1]
@@ -91,7 +91,7 @@ def noise_rerun(model_type, sid, sigmas, seed=0):
 	dfs = []
 	columns = ['type', 'sid', 'sigma', 'NLL', 'McFadden R2', 'mean accuracy']
 	for sigma in sigmas:
-		dynamics = rerun(model_type, sid, seed=seed, noise=True, sigma=sigma)
+		dynamics = rerun_jiang(model_type, sid, seed=seed, noise=True, sigma=sigma)
 		NLL = likelihood(params, model_type, sid, noise=True, sigma=sigma)
 		mcfadden_r2 = compute_mcfadden(NLL, sid)
 		mean_accuracy = get_mean_accuracy(dynamics, sid)
@@ -101,17 +101,18 @@ def noise_rerun(model_type, sid, sigmas, seed=0):
 	return noise_data
 
 if __name__ == '__main__':
-	model_type = sys.argv[1]
-	sid = int(sys.argv[2])
-	sigmas = np.arange(0, 1.025, 0.025)
+    dataset = sys.argv[1]
+    model_type = sys.argv[2]
+    sid = int(sys.argv[3])
+	# sigmas = np.arange(0, 1.025, 0.025)
 	start = time.time()
-	if model_type in ['bayes', 'RL', 'RL_n', 'RL_n2', 'RL_nn', 'NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+	if dataset=='carrabin':
 		choice_data = rerun_carrabin(model_type, sid)
 		print(choice_data)
-	else:
-		choice_data = rerun(model_type, sid)
-		noise_data = noise_rerun(model_type, sid, sigmas)
+	elif dataset=='jiang':
+		choice_data = rerun_jiang(model_type, sid)
+		# noise_data = noise_rerun(model_type, sid, sigmas)
 		print(choice_data)
-		print(noise_data)
+		# print(noise_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")
