@@ -19,9 +19,9 @@ if dataset=='carrabin':
 		data = run_WM(dataset, sid, z=0)
 		param_list = [model_type, sid]
 	if model_type=='NEF_RL':
-		mu = params['mu'].unique()[0]
+		mu = params['alpha'].unique()[0]
 		data = run_RL(dataset, sid, z=0, s=[mu, mu, mu, mu, mu])
-		activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
+		# activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
 		param_list = [model_type, sid, mu]
 	rmse = RMSE(params, model_type, sid)
 	performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
@@ -43,7 +43,7 @@ if dataset=='jiang':
 		b = params['b'].unique()[0]
 		inv_temp = params['inv_temp'].unique()[0]
 		data = run_RL(dataset, sid, z, s=[3,b,b,b])
-		activities = activity_RL(sid, z, s=[3,b,b,b])
+		# activities = activity_RL(sid, z, s=[3,b,b,b])
 		param_list = [model_type, sid, z, b, inv_temp]
 	NLL = likelihood(param_list, model_type, sid)
 	mcfadden_r2 = compute_mcfadden(NLL, sid)

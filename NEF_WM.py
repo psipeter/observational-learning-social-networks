@@ -13,13 +13,12 @@ class Environment():
         self.t_show = t_show
         self.t_buffer = t_buffer
         self.T = self.t_show + self.t_buffer
+        self.empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid & trial==@trial")
         if self.dataset=='jiang':
-            self.empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid & trial==@trial")
             self.n_neighbors = len(self.empirical['who'].unique()) - 1
             self.Tall = self.T + 3*self.n_neighbors*self.T - self.dt
             self.stages = range(4)
         if self.dataset=='carrabin':
-            self.empirical = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid & trial==@trial")
             self.stages = range(1, 6)
             self.Tall = 5*self.T - self.dt
         self.color = 0
