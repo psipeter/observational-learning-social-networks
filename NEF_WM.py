@@ -162,6 +162,7 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         net.probe_stim = nengo.Probe(ens_stim, synapse=0.01)
         net.probe_stop2 = nengo.Probe(ens_stop2, synapse=0.01)
         net.probe_stop3 = nengo.Probe(ens_stop3, synapse=0.01)
+        net.probe_number = nengo.Probe(ens_number, synapse=0.03)
         net.probe_weight = nengo.Probe(ens_weight, synapse=0.03)
         net.probe_scaled_weight = nengo.Probe(ens_scaled_weight, synapse=0.03)
         net.probe_d1 = nengo.Probe(ens_d1, synapse=0.03)
@@ -172,8 +173,8 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
 
     return net
 
-def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_WM(env, seed_net=seed_net, z=z)
+def simulate_WM(env, n_neurons=1000, z=0, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_WM(env, n_neurons=n_neurons, seed_net=seed_net, z=z)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
@@ -187,6 +188,12 @@ def run_WM(dataset, sid, z, save=True):
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial)
+        if dataset=='jiang':
+            n_neurons = 1000
+            seed_net = sid
+        elif dataset=='carrabin':
+            n_neurons = 300
+            seed_net = sid + 1000*trial
         net, sim = simulate_WM(env=env, seed_net=sid, z=z, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
