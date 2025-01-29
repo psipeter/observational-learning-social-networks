@@ -69,12 +69,18 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
     net.encoders = nengo.dists.Choice([[1]])
     net.intercepts = nengo.dists.Uniform(0, 1)
     net.eval_points = np.linspace(-1, 1, 1000).reshape(-1,1)
+    net.r1 = 20 if env.dataset=='jiang' else 5
+    net.r2 = 11 if env.dataset=='jiang' else 3
+    net.r3 = 0.9
+    net.r4 = 3
+    net.t1 = 0.05
+    net.t2 = 25
 
     func_obs = lambda t: env.sample(t)[0]
     func_degree = lambda t: env.sample(t)[1]
     func_multiply = lambda x: x[0]*x[1]
-    func_inverse = lambda x: 1/(x+10)
-    func_center = lambda x: x-10
+    func_inverse = lambda x: 1/(x+10) if env.dataset=='jiang' else 1/(x+2+2)
+    func_center = lambda x: x-10 if env.dataset=='jiang' else x-2
     func_stop2 = lambda x: 0 if np.abs(x)>0.1 else 1
     func_stop3 = lambda x: 1 if np.abs(x)>0.1 else 0
     func_differentiate1 = lambda x: 2*np.abs(x)
@@ -92,12 +98,12 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         ens_stim = nengo.Ensemble(n_neurons, 1)
         ens_differentiator = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
         ens_number_memory = nengo.Ensemble(2*n_neurons, 1)
-        ens_number = nengo.Ensemble(n_neurons, 1, radius=20)
-        ens_centered = nengo.Ensemble(n_neurons, 1, radius=11)
-        ens_weight = nengo.Ensemble(n_neurons, 1, radius=0.9)
+        ens_number = nengo.Ensemble(n_neurons, 1, radius=net.r1)
+        ens_centered = nengo.Ensemble(n_neurons, 1, radius=net.r2)
+        ens_weight = nengo.Ensemble(n_neurons, 1, radius=net.r3)
         ens_scaled_weight = nengo.Ensemble(n_neurons, 1)
         ens_degree = nengo.Ensemble(n_neurons, 1)
-        ens_d1 = nengo.Ensemble(2*n_neurons, 2, radius=3)
+        ens_d1 = nengo.Ensemble(2*n_neurons, 2, radius=net.r4)
         ens_d2 = nengo.Ensemble(n_neurons, 1)
         ens_d3 = nengo.Ensemble(n_neurons, 1)
         ens_memory = nengo.Ensemble(n_neurons, 1)
@@ -112,9 +118,9 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         # count up based on changes in the input signals
         nengo.Connection(ens_stim, ens_differentiator, synapse=0.01, function=func_differentiate1)
         nengo.Connection(ens_stim, ens_differentiator, synapse=0.1, function=func_differentiate2)
-        nengo.Connection(ens_differentiator, ens_number_memory, synapse=0.2, transform=0.05)
+        nengo.Connection(ens_differentiator, ens_number_memory, synapse=0.2, transform=net.t1)
         nengo.Connection(ens_number_memory, ens_number_memory, synapse=0.2)
-        nengo.Connection(ens_number_memory, ens_number, transform=25, synapse=0.1)
+        nengo.Connection(ens_number_memory, ens_number, transform=net.t2, synapse=0.1)
 
         # compute weight = 1/N from number memory
         nengo.Connection(ens_number, ens_centered, synapse=0.01, function=func_center)
