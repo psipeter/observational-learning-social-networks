@@ -12,14 +12,14 @@ dataset = sys.argv[1]
 model_type = sys.argv[2]
 sid = int(sys.argv[3])
 paramfile = sys.argv[4]
-params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl")
+params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl") if paramfile!="none" else []
 
 if dataset=='carrabin':
 	if model_type=='NEF_WM':
 		data = run_WM(dataset, sid, z=0)
 		param_list = [model_type, sid]
 	if model_type=='NEF_RL':
-		mu = params['mu'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[5])
+		mu = params['mu'].unique()[0]
 		data = run_RL(dataset, sid, z=0, s=[mu, mu, mu, mu, mu])
 		activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
 		param_list = [model_type, sid, mu]
@@ -34,14 +34,14 @@ if dataset=='carrabin':
 
 if dataset=='jiang':
 	if model_type=='NEF_WM':
-		z = params['z'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[4])
-		inv_temp = params['inv_temp'].unique()[0] if sys.argv[6]=='load' else float(sys.argv[5])
+		z = params['z'].unique()[0]
+		inv_temp = params['inv_temp'].unique()[0]
 		data = run_WM(dataset, sid, z)
 		param_list = [model_type, sid, z, inv_temp]
 	if model_type=='NEF_RL':
-		z = params['z'].unique()[0] if sys.argv[5]=='load' else float(sys.argv[4])
-		b = params['b'].unique()[0] if sys.argv[6]=='load' else float(sys.argv[5])
-		inv_temp = params['inv_temp'].unique()[0] if sys.argv[7]=='load' else float(sys.argv[6])
+		z = params['z'].unique()[0]
+		b = params['b'].unique()[0]
+		inv_temp = params['inv_temp'].unique()[0]
 		data = run_RL(dataset, sid, z, s=[3,b,b,b])
 		activities = activity_RL(sid, z, s=[3,b,b,b])
 		param_list = [model_type, sid, z, b, inv_temp]

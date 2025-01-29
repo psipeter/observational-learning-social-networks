@@ -175,10 +175,7 @@ def simulate_WM(env, z=0, seed_sim=0, seed_net=0, progress_bar=True):
     return net, sim
 
 def run_WM(dataset, sid, z, save=True):
-    if dataset=='jiang':
-        empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
-    if dataset=='carrabin':
-        empirical = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []

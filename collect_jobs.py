@@ -5,11 +5,9 @@ import subprocess
 dataset = sys.argv[1]
 model_type = sys.argv[2]
 label = sys.argv[3]
-noise = True if len(sys.argv)>3 else False
-if dataset=='carrabin':
-   sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
-elif dataset=='jiang':
-   sids = pd.read_pickle("data/jiang.pkl")['sid'].unique()
+# noise = True if len(sys.argv)>3 else False
+sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
+
 dfs1 = []
 dfs2 = []
 dfs3 = []
