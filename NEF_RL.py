@@ -140,8 +140,8 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=1e-4, z=0, direct=False)
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=0.03)
     return net
 
-def simulate_RL(env, z=0, a=1e-4, seed_sim=0, seed_net=0, progress_bar=True, direct=False):
-    net = build_network_RL(env, seed_net=seed_net, z=z, a=a, direct=direct)
+def simulate_RL(env, n_neurons=1000, z=0, a=1e-4, seed_sim=0, seed_net=0, progress_bar=True, direct=False):
+    net = build_network_RL(env, n_neurons=n_neurons, seed_net=seed_net, z=z, a=a, direct=direct)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
@@ -156,7 +156,13 @@ def run_RL(dataset, sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True, dire
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial, decay=decay, s=s)
-        net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False, direct=direct)
+        if dataset=='jiang':
+            n_neurons = 1000
+            seed_net = sid
+        elif dataset=='carrabin':
+            n_neurons = 300
+            seed_net = sid + 1000*trial
+        net, sim = simulate_RL(env=env, n_neurons=n_neurons, seed_net=seed_net, z=z, a=a, progress_bar=False, direct=direct)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")
