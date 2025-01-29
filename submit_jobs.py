@@ -5,7 +5,6 @@ import time
 
 dataset = sys.argv[1]
 model_type = sys.argv[2]
-if dataset=='carrabin':
 sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 
 # c = subprocess.run("rm *.out", shell=True)

@@ -4,11 +4,11 @@ import subprocess
 
 dataset = sys.argv[1]
 model_type = sys.argv[2]
-paramfile = sys.argv[3]
 sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 
 for sid in sids:
    if model_type in ['NEF_WM', 'NEF_RL']:
+      paramfile = sys.argv[3]
       fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile}"
       rerun_string = f"python rerun.py {dataset} {model_type} {sid}"
       file_string = f'nef_{sid}.sh'
