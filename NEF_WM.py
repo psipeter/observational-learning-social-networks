@@ -192,7 +192,7 @@ def run_WM(dataset, sid, z, save=True):
             n_neurons = 1000
             seed_net = sid
         elif dataset=='carrabin':
-            n_neurons = 300
+            n_neurons = 1000
             seed_net = sid + 1000*trial
         net, sim = simulate_WM(env=env, n_neurons=n_neurons, seed_net=seed_net, z=z, progress_bar=False)
         n_observations = 0
