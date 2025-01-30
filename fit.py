@@ -34,7 +34,7 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
     if model_type in ['bayes']:
         param_names = ['type', 'sid']
-    if model_type in ['NC']:
+    if model_type in ['NC', 'NC_ns']:
         param_names = ['type', 'sid', 'alpha']
     if model_type in ['NC_n', 'NC_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
@@ -70,7 +70,7 @@ def get_param_init_bounds(model_type):
     if model_type in ['RL_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
-    if model_type in ['NC']:
+    if model_type in ['NC', 'NC_ns']:
         param0 = [0.1]
         bounds = [(0,1)]
     if model_type in ['NC_n', 'NC_n2']:
@@ -139,7 +139,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 error = color - expectation
                 expectation += LR*error + rE
                 expectation = np.clip(expectation, -1, 1)
-    if model_type in ['NC', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
+    if model_type in ['NC', 'NC_ns', 'NC_n', 'NC_n2', 'NC_nn', 'NC_nnn', 'NC_nln', 'NC_nll']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         p = 0.5
@@ -150,6 +150,13 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 r += LR*color
                 p = r
                 p = np.clip(p, 0, 1)
+            if model_type == 'NC_ns': # fixed learning rate, no response noise
+                LR = params[0]
+                sigma = 0.04
+                eps = rng.normal(0, np.square(sigma))
+                r += LR*color + eps
+                r = np.clip(r, -1, 1)
+                p = r
             if model_type == 'NC_n': # normally distributed learning rate, no response noise
                 LR = rng.normal(params[0], params[1])
                 LR = np.clip(LR, 0, 1)
@@ -257,7 +264,7 @@ def RMSE(params, model_type, sid):  # Carrabin loss function
     errors = []
     for trial in trials:
         for stage in stages:
-            expectation = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=trial))
+            expectation = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=sid+1000*trial))
             response = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
             errors.append(np.square(response - expectation))
     rmse = np.sqrt(np.mean(errors))

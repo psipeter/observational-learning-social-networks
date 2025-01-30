@@ -4,6 +4,7 @@ import seaborn as sns
 import nengo
 import pandas as pd
 import sys
+import time
 from NEF_WM import *
 from NEF_RL import *
 from fit import *
@@ -13,6 +14,7 @@ model_type = sys.argv[2]
 sid = int(sys.argv[3])
 paramfile = sys.argv[4]
 params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl") if paramfile!="none" else []
+start = time.time()
 
 if dataset=='carrabin':
 	if model_type=='NEF_WM':
@@ -53,3 +55,6 @@ if dataset=='jiang':
 	param_names = get_param_names(model_type)
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
+
+end = time.time()
+print(f"runtime {(end-start)/60:.4} min")
