@@ -43,5 +43,6 @@ if __name__ == '__main__':
 		dfs.append(variance_carrabin(sid, trial, alpha=alpha, n_neurons=n_neurons))
 	alpha_data = pd.concat(dfs, ignore_index=True)
 	alpha_data.to_pickle(f"data/NEF_RL_variance_LR_carrabin_{sid}_{n_neurons}.pkl")
+	print(alpha_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")
