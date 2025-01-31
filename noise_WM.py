@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     start = time.time()
     dfs = []
-    for trial in trials[:3]:
+    for trial in trials:
         print(f"sid {sid}, trial {trial}")
         dfs.append(noise_WM(sid, trial, n_number, n_working))
     noise_data = pd.concat(dfs, ignore_index=True)
