@@ -62,7 +62,7 @@ class Environment():
         return [self.colors[tidx], self.degrees[tidx]]
 
 
-def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
+def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, n_number=2000, n_working=1000):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -97,7 +97,7 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         # neural populations
         ens_stim = nengo.Ensemble(n_neurons, 1)
         ens_differentiator = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
-        ens_number_memory = nengo.Ensemble(2*n_neurons, 1)
+        ens_number_memory = nengo.Ensemble(n_number, 1)
         ens_number = nengo.Ensemble(n_neurons, 1, radius=net.r1)
         ens_centered = nengo.Ensemble(n_neurons, 1, radius=net.r2)
         ens_weight = nengo.Ensemble(n_neurons, 1, radius=net.r3)
@@ -106,8 +106,8 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
         ens_d1 = nengo.Ensemble(2*n_neurons, 2, radius=net.r4)
         ens_d2 = nengo.Ensemble(n_neurons, 1)
         ens_d3 = nengo.Ensemble(n_neurons, 1)
-        ens_memory = nengo.Ensemble(n_neurons, 1)
-        ens_old = nengo.Ensemble(n_neurons, 1)
+        ens_memory = nengo.Ensemble(n_working, 1)
+        ens_old = nengo.Ensemble(n_working, 1)
         ens_stop2 = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
         ens_stop3 = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
 
@@ -173,8 +173,8 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0):
 
     return net
 
-def simulate_WM(env, n_neurons=1000, z=0, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_WM(env, n_neurons=n_neurons, seed_net=seed_net, z=z)
+def simulate_WM(env, n_neurons=1000, n_number=2000, n_working=1000, z=0, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_WM(env, n_neurons=n_neurons, n_number=n_number, n_working=n_working, seed_net=seed_net, z=z)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
@@ -188,13 +188,8 @@ def run_WM(dataset, sid, z, save=True):
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial)
-        if dataset=='jiang':
-            n_neurons = 1000
-            seed_net = sid
-        elif dataset=='carrabin':
-            n_neurons = 1000
-            seed_net = sid + 1000*trial
-        net, sim = simulate_WM(env=env, n_neurons=n_neurons, seed_net=seed_net, z=z, progress_bar=False)
+        seed_net = sid + 1000*trial
+        net, sim = simulate_WM(env=env, seed_net=seed_net, z=z, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")

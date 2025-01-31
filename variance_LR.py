@@ -7,7 +7,7 @@ import time
 import sys
 from NEF_RL import *
 
-def variance_carrabin(sid, trial, alpha, n_neurons, a=6e-5):
+def variance_LR(sid, trial, alpha, n_neurons, a=6e-5):
     s = [alpha,alpha,alpha,alpha,alpha]
     seed_net = sid + 1000*trial
     columns = ['type', 'n_neurons', 'sid', 'trial', 'stage', 'alpha', 'measured alpha']
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 	dfs = []
 	for trial in trials:
 		print(f"sid {sid}, trial {trial}")
-		dfs.append(variance_carrabin(sid, trial, alpha=alpha, n_neurons=n_neurons))
+		dfs.append(variance_LR(sid, trial, alpha=alpha, n_neurons=n_neurons))
 	alpha_data = pd.concat(dfs, ignore_index=True)
 	alpha_data.to_pickle(f"data/NEF_RL_variance_LR_carrabin_{sid}_{n_neurons}.pkl")
 	print(alpha_data)
