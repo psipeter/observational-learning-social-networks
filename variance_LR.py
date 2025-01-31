@@ -7,7 +7,7 @@ import time
 import sys
 from NEF_RL import *
 
-def variance_carrabin(sid, trial, alpha, n_neurons, a=5e-5):
+def variance_carrabin(sid, trial, alpha, n_neurons, a=6e-5):
     s = [alpha,alpha,alpha,alpha,alpha]
     seed_net = sid + 1000*trial
     columns = ['type', 'n_neurons', 'sid', 'trial', 'stage', 'alpha', 'measured alpha']
