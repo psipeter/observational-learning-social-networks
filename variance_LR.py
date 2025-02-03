@@ -10,7 +10,7 @@ from NEF_RL import *
 def variance_LR(sid, trial, alpha, n_neurons, a=6e-5):
     s = [alpha,alpha,alpha,alpha,alpha]
     seed_net = sid + 1000*trial
-    columns = ['type', 'n_neurons', 'sid', 'trial', 'stage', 'alpha', 'measured alpha']
+    columns = ['type', 'n_neurons', 'sid', 'trial', 'stage', 'expectation', 'alpha', 'measured alpha']
     dfs = []
     env = Environment(dataset='carrabin', sid=sid, trial=trial, decay='stages', s=s)
     net, sim = simulate_RL(env=env, n_neurons=n_neurons, seed_net=seed_net, z=0, a=a, progress_bar=False)
@@ -23,8 +23,7 @@ def variance_LR(sid, trial, alpha, n_neurons, a=6e-5):
         color = env.empirical.query("stage==@stage")['color'].unique()[0]
         PE = np.abs(color - eold)
         measured_alpha = delta_E / PE
-        # print(stage, color, eold, enew, PE, measured_alpha) 
-        df = pd.DataFrame([['NEF_RL', n_neurons, sid, trial, stage, alpha, measured_alpha]], columns=columns)
+        df = pd.DataFrame([['NEF_RL', n_neurons, sid, trial, stage, enew, alpha, measured_alpha]], columns=columns)
         dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)
     return data
