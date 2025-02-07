@@ -5,6 +5,8 @@ import seaborn as sns
 import pandas as pd
 import sys
 import time
+from scipy.stats import gaussian_kde
+
 
 def compute_mcfadden(NLL, sid):
     null_log_likelihood = 0
@@ -27,7 +29,7 @@ def get_param_names(model_type):
     if model_type in ['DGn']:
         param_names = ['type', 'sid', 'inv_temp']
     if model_type in ['RL']:
-        param_names = ['type', 'sid', 'alpha']
+        param_names = ['type', 'sid', 'mu']
     if model_type in ['RL_n', 'RL_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['RL_nn']:
@@ -35,7 +37,7 @@ def get_param_names(model_type):
     if model_type in ['bayes']:
         param_names = ['type', 'sid']
     if model_type in ['NC', 'NC_ns']:
-        param_names = ['type', 'sid', 'alpha']
+        param_names = ['type', 'sid', 'mu']
     if model_type in ['NC_n', 'NC_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['NC_nn']:
@@ -66,7 +68,7 @@ def get_param_init_bounds(model_type):
         bounds = [(0,1)]
     if model_type in ['RL_n', 'RL_n2']:
         param0 = [0.1, 0.05]
-        bounds = [(0,1), (0.0,0.1)]
+        bounds = [(0,1), (0.001,0.1)]
     if model_type in ['RL_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
@@ -257,6 +259,49 @@ def get_expectations_jiang(model_type, params, trial, stage, sid, noise=False, s
             expectations.append(expectation)
     return expectations
 
+def kde_loss(params, model_type, sid):  # Carrabin loss function based on distribution of responses to each input sequence
+    eval_points = np.linspace(-1, 1, 1000)
+    human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    dfs = []
+    columns = ['type', 'qid', 'response']
+    for trial in trials:
+        for stage in stages:
+            response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=sid+1000*trial))
+            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
+            qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
+            dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
+            dfs.append(pd.DataFrame([["human", qid, response_human]], columns=columns))
+    response_data = pd.concat(dfs, ignore_index=True)
+    total_loss = 0
+    for qid in response_data['qid'].unique():
+        responses_model = response_data.query("qid==@qid & type==@model_type")['response'].to_numpy()
+        responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
+        # convert these samples into probability distributions (smoothed histograms)
+        # kernel density estimation is a way to estimate the probability density function (PDF) of a random variable in a non-parametric way
+        # if model or human data has zero variance, calculate loss based on the difference between the means
+        unique_model = response_data.query("qid==@qid & type==@model_type")['response'].unique()
+        unique_human = response_data.query("qid==@qid & type=='human'")['response'].unique()
+        if len(unique_model)==1 or len(unique_human)==1:
+            kde_loss = np.abs(np.mean(responses_model) - np.mean(responses_human))
+        else:
+            kde_model = gaussian_kde(responses_model, bw_method='scott')
+            kde_human = gaussian_kde(responses_human, bw_method='scott')
+            samples_model = kde_model.evaluate(eval_points)
+            samples_human = kde_human.evaluate(eval_points)
+            samples_model = samples_model / np.sum(samples_model)
+            samples_human = samples_human / np.sum(samples_human)
+            kde_loss = np.mean(np.abs(samples_model - samples_human))  # ABS
+            # kde_loss = np.sqrt(np.mean(np.square(samples_model - samples_human)))  # RMSE
+        # add this to the total loss, weighed by the fraction of total trials
+        n_total = response_data.query("type=='human'")['qid'].size
+        n_qid = response_data.query("type=='human' & qid==@qid")['qid'].size
+        W = np.sqrt(n_qid / n_total)
+        total_loss += W * kde_loss
+    print(params, total_loss)
+    return total_loss
+
 def RMSE(params, model_type, sid):  # Carrabin loss function
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
     trials = human['trial'].unique()
@@ -286,21 +331,22 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
     return NLL
 
 def fit_carrabin(model_type, sid):
-    if model_type in ['bayes']:
-        params = []
-        rmse = RMSE(params, model_type, sid)
-    else:
-        param0, bounds = get_param_init_bounds(model_type)
-        result = scipy.optimize.minimize(
-            fun=RMSE,
-            x0=param0,
-            args=(model_type, sid),
-            bounds=bounds,
-            options={'disp':False})
-        rmse = result.fun
-        params = list(result.x)
+    # if model_type in ['bayes']:
+    #     params = []
+    #     rmse = RMSE(params, model_type, sid)
+    # else:
+    param0, bounds = get_param_init_bounds(model_type)
+    result = scipy.optimize.minimize(
+        # fun=RMSE,
+        fun=kde_loss,
+        x0=param0,
+        args=(model_type, sid),
+        bounds=bounds,
+        options={'disp':False})
+    loss = result.fun
+    params = list(result.x)
     # Save Results and Best Fit Parameters
-    performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
+    performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
     performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
     param_names = get_param_names(model_type)
     params.insert(0, sid)

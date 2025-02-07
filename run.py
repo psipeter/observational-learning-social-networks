@@ -21,7 +21,7 @@ if dataset=='carrabin':
 		data = run_WM(dataset, sid, z=0)
 		param_list = [model_type, sid]
 	if model_type=='NEF_RL':
-		mu = params['alpha'].unique()[0]
+		mu = params['mu'].unique()[0]
 		data = run_RL(dataset, sid, z=0, s=[mu, mu, mu, mu, mu])
 		# activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
 		param_list = [model_type, sid, mu]
