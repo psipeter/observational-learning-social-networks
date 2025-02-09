@@ -81,7 +81,8 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
     net.z = z
     net.a = a
     net.syn = syn
-    net.radius = 3 if env.dataset=='jiang' else 1
+    net.radius = 3 if env.dataset=='jiang' else env.s[0]
+    net.radius2 = 3 if env.dataset=='jiang' else 1
     net.pes = nengo.PES(learning_rate=net.a)
     zero = lambda x: 0
 
@@ -102,9 +103,9 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
         net.degree = nengo.Ensemble(n_neurons, 1)
         net.decay = nengo.Ensemble(n_neurons, 1, radius=net.radius)
         net.weight = nengo.Ensemble(n_neurons, 1, radius=net.radius)
-        net.context = nengo.Ensemble(n_neurons*env.dim_context, env.dim_context)
+        net.context = nengo.Ensemble(n_neurons, env.dim_context)
         net.prediction = nengo.Ensemble(n_neurons, 1)
-        net.combined = nengo.Ensemble(n_neurons, 3, radius=net.radius)
+        net.combined = nengo.Ensemble(n_neurons, 3, radius=net.radius2)
         net.error = nengo.Ensemble(n_neurons, 1)
         # connections
         nengo.Connection(net.input_obs, net.obs)
@@ -131,7 +132,7 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=net.syn)
     return net
 
-def simulate_RL(env, n_neurons=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
+def simulate_RL(env, n_neurons=200, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
     net = build_network_RL(env, n_neurons=n_neurons, seed_net=seed_net, z=z, a=a)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:

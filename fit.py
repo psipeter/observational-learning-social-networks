@@ -66,9 +66,12 @@ def get_param_init_bounds(model_type):
     if model_type in ['RL']:
         param0 = [0.5]
         bounds = [(0,1)]
-    if model_type in ['RL_n', 'RL_n2']:
+    if model_type in ['RL_n']:
         param0 = [0.1, 0.05]
-        bounds = [(0,1), (0.001,0.1)]
+        bounds = [(0,1), (0.01, 0.1)]
+    if model_type in ['RL_n2']:
+        param0 = [0.1, 0.05]
+        bounds = [(0,1), (0.01,0.2)]
     if model_type in ['RL_nn']:
         param0 = [0.1, 0.0, 0.0]
         bounds = [(0,1), (0,0.01), (0,0.01)]
