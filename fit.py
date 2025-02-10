@@ -271,14 +271,16 @@ def kde_loss(params, model_type, sid):  # Carrabin loss function based on distri
     columns = ['type', 'qid', 'response']
     for trial in trials:
         for stage in stages:
-            response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=sid+1000*trial))
-            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
             qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
-            dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
+            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
             dfs.append(pd.DataFrame([["human", qid, response_human]], columns=columns))
+            response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=s+100*sid+1000*trial))
+            dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
     response_data = pd.concat(dfs, ignore_index=True)
     total_loss = 0
     for qid in response_data['qid'].unique():
+        n_total = response_data.query("type=='human'")['qid'].size
+        n_qid = response_data.query("type=='human' & qid==@qid")['qid'].size
         responses_model = response_data.query("qid==@qid & type==@model_type")['response'].to_numpy()
         responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
         # convert these samples into probability distributions (smoothed histograms)
@@ -297,11 +299,37 @@ def kde_loss(params, model_type, sid):  # Carrabin loss function based on distri
             samples_human = samples_human / np.sum(samples_human)
             kde_loss = np.mean(np.abs(samples_model - samples_human))  # ABS
             # kde_loss = np.sqrt(np.mean(np.square(samples_model - samples_human)))  # RMSE
-        # add this to the total loss, weighed by the fraction of total trials
+            # add this to the total loss, weighed by the fraction of total trials
+            W = n_qid / n_total
+            total_loss += W * kde_loss
+    print(params, total_loss)
+    return total_loss
+
+def qid_abs_loss(params, model_type, sid, sim_per_trial=3):  # Carrabin loss function based on distribution of responses to each input sequence
+    human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    dfs = []
+    columns = ['type', 'qid', 'response']
+    for trial in trials:
+        for stage in stages:
+            qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
+            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
+            dfs.append(pd.DataFrame([["human", qid, response_human]], columns=columns))
+            for s in range(sim_per_trial):
+                response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=s+100*sid+1000*trial))
+                dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
+    response_data = pd.concat(dfs, ignore_index=True)
+    total_loss = 0
+    for qid in response_data['qid'].unique():
         n_total = response_data.query("type=='human'")['qid'].size
         n_qid = response_data.query("type=='human' & qid==@qid")['qid'].size
-        W = np.sqrt(n_qid / n_total)
-        total_loss += W * kde_loss
+        W = 1  # n_qid / n_total
+        # if n_qid >= min_n_qid:
+        responses_model = response_data.query("qid==@qid & type==@model_type")['response'].to_numpy()
+        responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
+        total_loss += W * np.abs(np.mean(responses_model) - np.mean(responses_human))
+        # total_loss += W * kde_loss
     print(params, total_loss)
     return total_loss
 
@@ -341,11 +369,13 @@ def fit_carrabin(model_type, sid):
     param0, bounds = get_param_init_bounds(model_type)
     result = scipy.optimize.minimize(
         # fun=RMSE,
-        fun=kde_loss,
+        # fun=kde_loss,
+        fun=qid_abs_loss,
         x0=param0,
         args=(model_type, sid),
         bounds=bounds,
-        options={'disp':False})
+        method='L-BFGS-B',
+        options={'maxiter': 10})
     loss = result.fun
     params = list(result.x)
     # Save Results and Best Fit Parameters
