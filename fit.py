@@ -305,7 +305,7 @@ def kde_loss(params, model_type, sid):  # Carrabin loss function based on distri
     print(params, total_loss)
     return total_loss
 
-def qid_abs_loss(params, model_type, sid, sim_per_trial=3):  # Carrabin loss function based on distribution of responses to each input sequence
+def qid_abs_loss(params, model_type, sid, sim_per_trial=1):  # Carrabin loss function based on distribution of responses to each input sequence
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
     trials = human['trial'].unique()
     stages = human['stage'].unique()
@@ -329,6 +329,7 @@ def qid_abs_loss(params, model_type, sid, sim_per_trial=3):  # Carrabin loss fun
         responses_model = response_data.query("qid==@qid & type==@model_type")['response'].to_numpy()
         responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
         total_loss += W * np.abs(np.mean(responses_model) - np.mean(responses_human))
+        total_loss += W * np.abs(np.std(responses_model) - np.std(responses_human))
         # total_loss += W * kde_loss
     print(params, total_loss)
     return total_loss
@@ -375,7 +376,7 @@ def fit_carrabin(model_type, sid):
         args=(model_type, sid),
         bounds=bounds,
         method='L-BFGS-B',
-        options={'maxiter': 10})
+        options={'maxiter': 5})
     loss = result.fun
     params = list(result.x)
     # Save Results and Best Fit Parameters
