@@ -13,7 +13,7 @@ dataset = sys.argv[1]
 model_type = sys.argv[2]
 sid = int(sys.argv[3])
 paramfile = sys.argv[4]
-params = pd.read_pickle(f"data/{paramfile}_{sid}_params.pkl") if paramfile!="none" else []
+params = pd.read_pickle(f"data/{paramfile}_{dataset}_{sid}_params.pkl") if paramfile!="none" else []
 start = time.time()
 
 if dataset=='carrabin':
@@ -21,7 +21,7 @@ if dataset=='carrabin':
 		data = run_WM(dataset, sid, z=0)
 		param_list = [model_type, sid]
 	if model_type=='NEF_RL':
-		mu = params['mu'].unique()[0]
+		mu = params['mu'].unique()[0] if paramfile!="none" else float(sys.argv[5])
 		data = run_RL(dataset, sid, z=0, s=[mu, mu, mu, mu, mu])
 		# activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
 		param_list = [model_type, sid, mu]
