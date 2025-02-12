@@ -21,16 +21,15 @@ if dataset=='carrabin':
 		data = run_WM(dataset, sid, z=0)
 		param_list = [model_type, sid]
 	if model_type=='NEF_RL':
-		mu = params['mu'].unique()[0] if paramfile!="none" else float(sys.argv[5])
-		data = run_RL(dataset, sid, z=0, s=[mu, mu, mu, mu, mu])
+		mu = params['mu'].unique()[0]
+		n_error = params['n_error'].unique()[0]
+		data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
 		# activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
-		param_list = [model_type, sid, mu]
-	rmse = RMSE(params, model_type, sid)
-	performance_data = pd.DataFrame([[model_type, sid, rmse]], columns=['type', 'sid', 'RMSE'])
+		param_list = [model_type, sid, mu, n_error]
+		param_names = ['type', 'sid', 'mu', 'n_error']
+		loss = qid_abs_loss([], model_type, sid)
+	performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
-	param_names = get_param_names(model_type)
-	param_list.insert(0, sid)
-	param_list.insert(0, model_type)
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
 

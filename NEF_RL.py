@@ -140,7 +140,7 @@ def simulate_RL(env, n_neurons=50, n_error=200, z=0, a=5e-5, seed_sim=0, seed_ne
     return net, sim
 
 
-def run_RL(dataset, sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True):
+def run_RL(dataset, sid, z, s, n_neurons=50, n_error=200, a=5e-5, decay='stages', save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -149,7 +149,7 @@ def run_RL(dataset, sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True):
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial, decay=decay, s=s)
         seed_net = sid + 1000*trial
-        net, sim = simulate_RL(env=env, seed_net=seed_net, z=z, a=a, progress_bar=False)
+        net, sim = simulate_RL(env=env, seed_net=seed_net, z=z, a=a, n_neurons=n_neurons, n_error=n_error, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")

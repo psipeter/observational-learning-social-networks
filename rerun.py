@@ -11,7 +11,7 @@ def rerun_carrabin(model_type, sid):
 	human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
 	stages = human['stage'].unique()
-	if model_type in ['bayes']:
+	if model_type in ['bayes', 'bayesPE']:
 		params = []
 	else:
 		params = pd.read_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl").loc[0].to_numpy()[2:]

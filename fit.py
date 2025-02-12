@@ -5,8 +5,17 @@ import seaborn as sns
 import pandas as pd
 import sys
 import time
+import optuna
+from NEF_RL import run_RL
 from scipy.stats import gaussian_kde
 
+def NEF_carrabin_loss(trial, model_type, sid):
+    if model_type=='NEF_RL':
+        mu = trial.suggest_float("mu", 0.0, 1.0, step=0.01)
+        n_error = trial.suggest_int("n_error", 30, 1000, step=10)
+        data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
+        loss = qid_abs_loss([], model_type, sid)
+    return loss
 
 def compute_mcfadden(NLL, sid):
     null_log_likelihood = 0
@@ -328,7 +337,7 @@ def kde_loss(params, model_type, sid):  # Carrabin loss function based on distri
     print(params, total_loss)
     return total_loss
 
-def qid_abs_loss(params, model_type, sid, sim_per_trial=1):  # Carrabin loss function based on distribution of responses to each input sequence
+def qid_abs_loss(params, model_type, sid):  # Carrabin loss function based on distribution of responses to each input sequence
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
     trials = human['trial'].unique()
     stages = human['stage'].unique()
@@ -339,9 +348,8 @@ def qid_abs_loss(params, model_type, sid, sim_per_trial=1):  # Carrabin loss fun
             qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
             response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
             dfs.append(pd.DataFrame([["human", qid, response_human]], columns=columns))
-            for s in range(sim_per_trial):
-                response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=s+100*sid+1000*trial))
-                dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
+            response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=100*sid+1000*trial))
+            dfs.append(pd.DataFrame([[model_type, qid, response_model]], columns=columns))
     response_data = pd.concat(dfs, ignore_index=True)
     total_loss = 0
     for qid in response_data['qid'].unique():
@@ -384,11 +392,25 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid):
+def fit_carrabin(model_type, sid, optuna_trials=2):
     if model_type in ['bayes', 'bayesPE']:
         params = []
         # rmse = RMSE(params, model_type, sid)
         loss = qid_abs_loss(params, model_type, sid)
+        param_names = get_param_names(model_type)
+        params.insert(0, sid)
+        params.insert(0, model_type)
+    elif model_type in ['NEF_RL', 'NEF_WM']:
+        study = optuna.create_study(direction="minimize")
+        study.optimize(lambda trial: NEF_carrabin_loss(trial, model_type, sid), n_trials=optuna_trials)
+        best_params = study.best_trial.params
+        loss = study.best_trial.value
+        param_names = ["type", "sid"]
+        params = [model_type, sid]
+        for key, value in best_params.items():
+            param_names.append(key)
+            params.append(value)
+        print(f"{len(study.trials)} trials completed. Best value is {loss:.4} with parameters:")
     else:
         param0, bounds = get_param_init_bounds(model_type)
         result = scipy.optimize.minimize(
@@ -402,12 +424,13 @@ def fit_carrabin(model_type, sid):
             options={'maxiter': 5})
         loss = result.fun
         params = list(result.x)
+        param_names = get_param_names(model_type)
+        params.insert(0, sid)
+        params.insert(0, model_type)
+
     # Save Results and Best Fit Parameters
     performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
     performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
-    param_names = get_param_names(model_type)
-    params.insert(0, sid)
-    params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
