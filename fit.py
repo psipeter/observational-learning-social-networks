@@ -34,8 +34,10 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'mu', 'sigma']
     if model_type in ['RL_nn']:
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
-    if model_type in ['bayes']:
+    if model_type in ['bayes', 'bayesPE']:
         param_names = ['type', 'sid']
+    if model_type in ['bayes_n']:
+        param_names = ['type', 'sid', 'noise_n', 'noise_e']
     if model_type in ['NC', 'NC_ns']:
         param_names = ['type', 'sid', 'mu']
     if model_type in ['NC_n', 'NC_n2']:
@@ -60,9 +62,12 @@ def get_param_init_bounds(model_type):
     if model_type in ['DGn']:
         param0 = [1.0]
         bounds = [(0,30)]
-    if model_type in ['bayes']:
+    if model_type in ['bayes', 'bayesPE']:
         param0 = []
-        bounds = []  
+        bounds = []
+    if model_type in ['bayes_n']:
+        param0 = [0.1, 0.1]
+        bounds = [(0,1), (0,1)]  
     if model_type in ['RL']:
         param0 = [0.5]
         bounds = [(0,1)]
@@ -118,6 +123,24 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
             delta = (1-p_star)/(s_old+3) if color==1 else -p_star/(s_old+3)
             p_star += delta
         expectation = 2*p_star-1
+    if model_type == 'bayes_n':
+        subdata = human.query("trial==@trial & stage<=@stage")
+        expectation = 0
+        noise_n = params[0]
+        noise_e = params[1]
+        for stg in range(stage):
+            s_old = stg
+            s_new = stg + 1
+            weight = 1/(s_old+3)
+            dW = rng.uniform((1-noise_n)*weight, (1+noise_n)*weight)
+            weight = dW
+            weight = np.clip(weight, 0, 1)
+            color = subdata.query("stage==@s_new")['color'].unique()[0]
+            error = color - expectation
+            expectation += weight * error
+            dE = rng.uniform((1-noise_e)*expectation, (1+noise_e)*expectation)
+            expectation = dE
+            expectation = np.clip(expectation, -1, 1)
     if model_type in ['RL', 'RL_n', 'RL_n2', 'RL_nn']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
@@ -324,13 +347,12 @@ def qid_abs_loss(params, model_type, sid, sim_per_trial=1):  # Carrabin loss fun
     for qid in response_data['qid'].unique():
         n_total = response_data.query("type=='human'")['qid'].size
         n_qid = response_data.query("type=='human' & qid==@qid")['qid'].size
-        W = 1  # n_qid / n_total
-        # if n_qid >= min_n_qid:
+        # W = 1
+        W = n_qid / n_total
         responses_model = response_data.query("qid==@qid & type==@model_type")['response'].to_numpy()
         responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
         total_loss += W * np.abs(np.mean(responses_model) - np.mean(responses_human))
         total_loss += W * np.abs(np.std(responses_model) - np.std(responses_human))
-        # total_loss += W * kde_loss
     print(params, total_loss)
     return total_loss
 
@@ -363,22 +385,23 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
     return NLL
 
 def fit_carrabin(model_type, sid):
-    # if model_type in ['bayes']:
-    #     params = []
-    #     rmse = RMSE(params, model_type, sid)
-    # else:
-    param0, bounds = get_param_init_bounds(model_type)
-    result = scipy.optimize.minimize(
-        # fun=RMSE,
-        # fun=kde_loss,
-        fun=qid_abs_loss,
-        x0=param0,
-        args=(model_type, sid),
-        bounds=bounds,
-        method='L-BFGS-B',
-        options={'maxiter': 5})
-    loss = result.fun
-    params = list(result.x)
+    if model_type in ['bayes', 'bayesPE']:
+        params = []
+        # rmse = RMSE(params, model_type, sid)
+        loss = qid_abs_loss(params, model_type, sid)
+    else:
+        param0, bounds = get_param_init_bounds(model_type)
+        result = scipy.optimize.minimize(
+            # fun=RMSE,
+            # fun=kde_loss,
+            fun=qid_abs_loss,
+            x0=param0,
+            args=(model_type, sid),
+            bounds=bounds,
+            method='L-BFGS-B',
+            options={'maxiter': 5})
+        loss = result.fun
+        params = list(result.x)
     # Save Results and Best Fit Parameters
     performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
     performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
