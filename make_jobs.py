@@ -10,7 +10,7 @@ for sid in sids:
    if model_type in ['NEF_WM', 'NEF_RL']:
       # paramfile = sys.argv[3]
       optimize_string = f"python fit.py {dataset} {model_type} {sid}"
-      fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile}"
+      fit_string = f"python run.py {dataset} {model_type} {sid}"
       rerun_string = f"python rerun.py {dataset} {model_type} {sid}"
       file_string = f'nef_{sid}.sh'
    else:
