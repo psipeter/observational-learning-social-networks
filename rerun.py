@@ -7,7 +7,7 @@ import sys
 from fit import get_expectations_carrabin, get_expectations_jiang, likelihood, compute_mcfadden
 import time
 
-def rerun_carrabin(model_type, sid, sim_per_trial=3):
+def rerun_carrabin(model_type, sid):
 	human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
 	trials = human['trial'].unique()
 	stages = human['stage'].unique()
@@ -20,9 +20,8 @@ def rerun_carrabin(model_type, sid, sim_per_trial=3):
 	for trial in trials:
 		for stage in stages:
 			qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
-			for s in range(sim_per_trial):
-				response = get_expectations_carrabin(model_type, params, sid, trial, stage)
-				dfs.append(pd.DataFrame([[model_type, sid, trial, stage, qid, response]], columns=columns))
+			response = get_expectations_carrabin(model_type, params, sid, trial, stage)
+			dfs.append(pd.DataFrame([[model_type, sid, trial, stage, qid, response]], columns=columns))
 	dynamics_data = pd.concat(dfs, ignore_index=True)
 	dynamics_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_dynamics.pkl")
 	return dynamics_data

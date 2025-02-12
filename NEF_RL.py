@@ -75,7 +75,7 @@ class Environment():
         tidx = int(t/self.dt)
         return [self.colors[tidx], self.degrees[tidx], self.decays[tidx]]
 
-def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
+def build_network_RL(env, n_neurons=50, n_error=200, seed_net=0, a=5e-5, z=0, syn=0.01):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -104,8 +104,8 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
         net.decay = nengo.Ensemble(n_neurons, 1, radius=net.radius)
         net.weight = nengo.Ensemble(n_neurons, 1, radius=net.radius)
         net.context = nengo.Ensemble(n_neurons, env.dim_context)
-        net.prediction = nengo.Ensemble(n_neurons, 1)
-        net.combined = nengo.Ensemble(n_neurons, 3, radius=net.radius2)
+        net.value = nengo.Ensemble(n_neurons, 1)
+        net.combined = nengo.Ensemble(n_error, 3, radius=net.radius2)
         net.error = nengo.Ensemble(n_neurons, 1)
         # connections
         nengo.Connection(net.input_obs, net.obs)
@@ -114,9 +114,9 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
         nengo.Connection(net.input_decay, net.decay)
         nengo.Connection(net.degree, net.weight, transform=net.z, synapse=net.syn)
         nengo.Connection(net.decay, net.weight, synapse=net.syn)
-        net.conn = nengo.Connection(net.context, net.prediction, learning_rule_type=net.pes, function=zero)
+        net.conn = nengo.Connection(net.context, net.value, learning_rule_type=net.pes, function=zero)
         nengo.Connection(net.obs, net.combined[0])
-        nengo.Connection(net.prediction, net.combined[1])
+        nengo.Connection(net.value, net.combined[1])
         nengo.Connection(net.weight, net.combined[2], synapse=net.syn)
         nengo.Connection(net.combined, net.error, function=func_error, synapse=net.syn)
         nengo.Connection(net.error, net.conn.learning_rule)
@@ -125,15 +125,15 @@ def build_network_RL(env, n_neurons=1000, seed_net=0, a=5e-5, z=0, syn=0.01):
         net.probe_input_degree = nengo.Probe(net.input_degree, synapse=0)
         net.probe_obs = nengo.Probe(net.obs, synapse=net.syn)
         net.probe_weight = nengo.Probe(net.weight, synapse=net.syn)
-        net.probe_prediction = nengo.Probe(net.prediction, synapse=net.syn)
+        net.probe_value = nengo.Probe(net.value, synapse=net.syn)
         net.probe_error = nengo.Probe(net.error, synapse=net.syn)
         net.probe_combined = nengo.Probe(net.combined, synapse=net.syn)
         net.probe_weight_neurons = nengo.Probe(net.weight.neurons, synapse=net.syn)
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=net.syn)
     return net
 
-def simulate_RL(env, n_neurons=2000, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_RL(env, n_neurons=n_neurons, seed_net=seed_net, z=z, a=a)
+def simulate_RL(env, n_neurons=50, n_error=200, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_RL(env, n_neurons=n_neurons, n_error=n_error, seed_net=seed_net, z=z, a=a)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
@@ -158,12 +158,12 @@ def run_RL(dataset, sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True):
                 for o in range(len(observations)):
                     n_observations += 1
                     tidx = int((n_observations*env.T)/env.dt)-2
-                    estimate = sim.data[net.probe_prediction][tidx][0]
+                    estimate = sim.data[net.probe_value][tidx][0]
                     df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
                     dfs.append(df)
             elif dataset=='carrabin':
                 tidx = int((stage*env.T)/env.dt)-2
-                estimate = sim.data[net.probe_prediction][tidx][0]
+                estimate = sim.data[net.probe_value][tidx][0]
                 df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)
