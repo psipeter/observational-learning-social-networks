@@ -392,7 +392,7 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, optuna_trials=2):
+def fit_carrabin(model_type, sid, optuna_trials=100):
     if model_type in ['bayes', 'bayesPE']:
         params = []
         # rmse = RMSE(params, model_type, sid)
