@@ -5,7 +5,7 @@ import nengo
 import pandas as pd
 
 class Environment():
-    def __init__(self, dataset, sid, trial, T=1, dt=0.001, dim_context=2, seed_env=0, decay='none', s=[1,1,1,1]):
+    def __init__(self, dataset, sid, trial, T=1, dt=0.001, dim_context=5, seed_env=0, decay='none', s=[1,1,1,1]):
         self.T = T
         self.dt = dt
         self.sid = sid
@@ -103,7 +103,7 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         net.degree = nengo.Ensemble(n_neurons, 1)
         net.decay = nengo.Ensemble(n_neurons, 1, radius=net.radius)
         net.weight = nengo.Ensemble(n_neurons, 1, radius=net.radius)
-        net.context = nengo.Ensemble(n_learning, env.dim_context)
+        net.context = nengo.Ensemble(n_neurons, env.dim_context)
         net.value = nengo.Ensemble(n_learning, 1)
         net.combined = nengo.Ensemble(n_error, 3, radius=net.radius2)
         net.error = nengo.Ensemble(n_neurons, 1)
