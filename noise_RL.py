@@ -9,12 +9,12 @@ from NEF_RL import *
 
 def noise_RL(sid, trial, n_learning, n_error, s):
     seed_net = sid + 1000*trial
-    qid = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid & trial==@trial and stage==@stage")['qid'].unique()[0]
     columns = ['type', 'sid', 'trial', 'stage', 'qid', 'n_learning', 'n_error', 'response']
     dfs = []
     env = Environment(dataset="carrabin", sid=sid, trial=trial, decay="stages", s=s)
     net, sim = simulate_RL(env=env, seed_net=seed_net, n_learning=n_learning, n_error=n_error, progress_bar=False)
     for stage in env.stages:
+        qid = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid & trial==@trial and stage==@stage")['qid'].unique()[0]
         tidx = int((stage*env.T)/env.dt)-2
         response = sim.data[net.probe_value][tidx][0]
         df = pd.DataFrame([['NEF_RL', sid, trial, stage, qid, n_learning, n_error, response]], columns=columns)
