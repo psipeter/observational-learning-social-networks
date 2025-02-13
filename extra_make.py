@@ -4,7 +4,7 @@ import subprocess
 
 experiment = sys.argv[1]
 sid = int(sys.argv[2])
-n_neurons = [int(arg) for arg in sys.argv[3:]]
+n_neurons = [int(arg) for arg in sys.argv[3:-1]]
 
 if experiment=='noise_RL':
    paramfile = sys.argv[-1]
