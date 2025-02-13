@@ -5,8 +5,8 @@ import time
 
 experiment = sys.argv[1]
 sid = int(sys.argv[2])
-label = sys.argv[3]
-n_neurons = [int(arg) for arg in sys.argv[4:]]
+n_neurons = [int(arg) for arg in sys.argv[3:-1]]
+label = sys.argv[-1]
 
 dfs = []
 if experiment=='noise_RL':
