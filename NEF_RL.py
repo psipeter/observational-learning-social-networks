@@ -75,7 +75,7 @@ class Environment():
         tidx = int(t/self.dt)
         return [self.colors[tidx], self.degrees[tidx], self.decays[tidx]]
 
-def build_network_RL(env, n_neurons=50, n_error=200, seed_net=0, a=5e-5, z=0, syn=0.01):
+def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0, a=5e-5, z=0, syn=0.01):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -103,8 +103,8 @@ def build_network_RL(env, n_neurons=50, n_error=200, seed_net=0, a=5e-5, z=0, sy
         net.degree = nengo.Ensemble(n_neurons, 1)
         net.decay = nengo.Ensemble(n_neurons, 1, radius=net.radius)
         net.weight = nengo.Ensemble(n_neurons, 1, radius=net.radius)
-        net.context = nengo.Ensemble(n_neurons, env.dim_context)
-        net.value = nengo.Ensemble(n_neurons, 1)
+        net.context = nengo.Ensemble(n_learning, env.dim_context)
+        net.value = nengo.Ensemble(n_learning, 1)
         net.combined = nengo.Ensemble(n_error, 3, radius=net.radius2)
         net.error = nengo.Ensemble(n_neurons, 1)
         # connections
@@ -132,15 +132,14 @@ def build_network_RL(env, n_neurons=50, n_error=200, seed_net=0, a=5e-5, z=0, sy
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=net.syn)
     return net
 
-def simulate_RL(env, n_neurons=50, n_error=200, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_RL(env, n_neurons=n_neurons, n_error=n_error, seed_net=seed_net, z=z, a=a)
+def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_RL(env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, z=z, a=a)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-
-def run_RL(dataset, sid, z, s, n_neurons=50, n_error=200, a=5e-5, decay='stages', save=True):
+def run_RL(dataset, sid, z, s, n_neurons=100, n_learning=100, n_error=100, a=5e-5, decay='stages', save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -149,7 +148,7 @@ def run_RL(dataset, sid, z, s, n_neurons=50, n_error=200, a=5e-5, decay='stages'
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial, decay=decay, s=s)
         seed_net = sid + 1000*trial
-        net, sim = simulate_RL(env=env, seed_net=seed_net, z=z, a=a, n_neurons=n_neurons, n_error=n_error, progress_bar=False)
+        net, sim = simulate_RL(env=env, seed_net=seed_net, z=z, a=a, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")
