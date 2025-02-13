@@ -26,7 +26,7 @@ if __name__ == '__main__':
     n_learning = int(sys.argv[2])
     n_error = int(sys.argv[3])
     # mu = float(sys.argv[4])
-    param_file = sys.argv[4]
+    paramfile = sys.argv[4]
     params = pd.read_pickle(f"data/{paramfile}_carrabin_{sid}_params.pkl")
     mu = params['mu'].unique()[0]
     empirical = pd.read_pickle(f"data/carrabin.pkl")
