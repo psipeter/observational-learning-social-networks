@@ -7,7 +7,7 @@ sid = int(sys.argv[2])
 n_neurons = [int(arg) for arg in sys.argv[3:]]
 
 if experiment=='noise_RL':
-   paramfile = sys.argv[4]
+   paramfile = sys.argv[-1]
    n = 0
    for n1 in n_neurons:
       for n2 in n_neurons:
