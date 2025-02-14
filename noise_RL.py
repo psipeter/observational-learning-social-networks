@@ -31,8 +31,7 @@ if __name__ == '__main__':
     paramfile = sys.argv[4]
     params = pd.read_pickle(f"data/{paramfile}_carrabin_{sid}_params.pkl")
     mu = params['mu'].unique()[0]
-    empirical = pd.read_pickle(f"data/carrabin.pkl")
-    trials = empirical['trial'].unique()
+    trials = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")['trial'].unique()
     start = time.time()
     dfs = []
     for trial in trials:
