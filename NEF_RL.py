@@ -75,7 +75,7 @@ class Environment():
         tidx = int(t/self.dt)
         return [self.colors[tidx], self.degrees[tidx], self.decays[tidx]]
 
-def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0, a=5e-5, z=0, syn=0.01):
+def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0, a=5e-5, z=0, syn=0.02):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -132,7 +132,7 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=net.syn)
     return net
 
-def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
+def simulate_RL(env, n_neurons=50, n_learning=100, n_error=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
     net = build_network_RL(env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, z=z, a=a)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
