@@ -11,8 +11,8 @@ from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
-        mu = trial.suggest_float("mu", 0.0, 1.0, step=0.01)
-        n_error = trial.suggest_int("n_error", 30, 1000, step=10)
+        mu = trial.suggest_float("mu", 0.01, 1.0, step=0.01)
+        n_error = trial.suggest_int("n_error", 30, 500, step=10)
         data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
         loss = qid_abs_loss([], model_type, sid)
     return loss
@@ -392,7 +392,7 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, optuna_trials=100):
+def fit_carrabin(model_type, sid, optuna_trials=300):
     if model_type in ['bayes', 'bayesPE']:
         params = []
         # rmse = RMSE(params, model_type, sid)
