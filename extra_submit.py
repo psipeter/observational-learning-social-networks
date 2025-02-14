@@ -3,9 +3,9 @@ import pandas as pd
 import subprocess
 import time
 
+experiment = sys.argv[1]
 
 if experiment=='noise_RL':
-	experiment = sys.argv[1]
 	n_neurons = [int(arg) for arg in sys.argv[2:]]
 	sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 	n = 0
@@ -18,7 +18,6 @@ if experiment=='noise_RL':
 				time.sleep(10)  # wait a few seconds before next submission to help out SLURM system
 
 if experiment=='noise_WM':
-	experiment = sys.argv[1]
 	sid = int(sys.argv[2])
 	n_neurons = [int(arg) for arg in sys.argv[3:]]
 	n = 0

@@ -2,9 +2,9 @@ import sys
 import pandas as pd
 import subprocess
 
+experiment = sys.argv[1]
 
 if experiment=='noise_RL':
-	experiment = sys.argv[1]
 	n_neurons = [int(arg) for arg in sys.argv[2:]]
 	# n_neurons = [int(arg) for arg in sys.argv[2:-1]]
 	# paramfile = sys.argv[-1]
@@ -31,7 +31,6 @@ if experiment=='noise_RL':
 					rsh.write(run_string)
 
 if experiment=='noise_WM':
-	experiment = sys.argv[1]
 	sid = int(sys.argv[2])
 	n_neurons = [int(arg) for arg in sys.argv[3:]]
 	n = 0
