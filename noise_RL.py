@@ -15,7 +15,8 @@ def noise_RL(sid, trial, n_learning, n_error, s):
     net, sim = simulate_RL(env=env, seed_net=seed_net, n_learning=n_learning, n_error=n_error, progress_bar=False)
     for stage in env.stages:
         tidx = int((stage*env.T)/env.dt)-2
-        response = sim.data[net.probe_value][tidx][0]
+        # response = sim.data[net.probe_value][tidx][0]
+        response = np.mean(sim.data[net.probe_value][tidx-100: tidx])
         qid = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid & trial==@trial and stage==@stage")['qid'].unique()[0]
         df = pd.DataFrame([['NEF_RL', sid, trial, stage, qid, n_learning, n_error, response]], columns=columns)
         dfs.append(df)
