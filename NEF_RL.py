@@ -132,7 +132,7 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         net.probe_error_neurons = nengo.Probe(net.error.neurons, synapse=net.syn)
     return net
 
-def simulate_RL(env, n_neurons=50, n_learning=100, n_error=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
+def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, z=0, a=5e-5, seed_sim=0, seed_net=0, progress_bar=True):
     net = build_network_RL(env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, z=z, a=a)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
@@ -169,32 +169,3 @@ def run_RL(dataset, sid, z, s, n_neurons=100, n_learning=100, n_error=100, a=5e-
     if save:
         data.to_pickle(f"data/NEF_RL_{dataset}_{sid}_estimates.pkl")
     return data
-
-# def activity_RL(sid, z, s=[1,1,1,1], a=5e-5, decay='stages', save=True):
-#     empirical = pd.read_pickle(f"data/human.pkl").query("sid==@sid")
-#     trials = empirical['trial'].unique() 
-#     columns = ['type', 'sid', 'trial', 'stage', 'tidx', 'aPE', 'RD', 'error activity', 'weight activity']
-#     dfs = []
-#     for trial in trials:
-#         print(f"sid {sid}, trial {trial}")
-#         env = Environment(sid=sid, trial=trial, decay=decay, s=s)
-#         net, sim = simulate_RL(env=env, seed_net=sid, z=z, a=a, progress_bar=False)
-#         n_observations = 0
-#         for stage in range(4):
-#             subdata = empirical.query("trial==@trial and stage==@stage")
-#             observations = subdata['color'].to_numpy()
-#             for o in range(len(observations)):
-#                 tidx = int((n_observations*env.T)/env.dt)+200  # 200ms after stim presentation
-#                 obs = sim.data[net.probe_input_obs][tidx][0]
-#                 estimate = sim.data[net.probe_prediction][tidx][0]
-#                 aPE = np.abs(obs - estimate)
-#                 RD = sim.data[net.probe_input_degree][tidx][0]
-#                 error_activity = np.mean(sim.data[net.probe_error_neurons][tidx])
-#                 weight_activity = np.mean(sim.data[net.probe_weight_neurons][tidx])
-#                 df = pd.DataFrame([['NEF_RL', sid, trial, stage, tidx, aPE, RD, error_activity, weight_activity]], columns=columns)
-#                 dfs.append(df)
-#                 n_observations += 1
-#         data = pd.concat(dfs, ignore_index=True)
-#         if save:
-#             data.to_pickle(f"data/NEF_RL_{sid}_activities.pkl")
-#     return data
