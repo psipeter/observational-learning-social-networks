@@ -8,7 +8,8 @@ if experiment=='noise_RL':
 	n_neurons = [int(arg) for arg in sys.argv[2:]]
 	# n_neurons = [int(arg) for arg in sys.argv[2:-1]]
 	# paramfile = sys.argv[-1]
-	paramfile = "RL_n2"
+	# paramfile = "RL_n2"
+	paramfile = "NEF_RL"
 	sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
 	n = 0
 	for sid in sids:
