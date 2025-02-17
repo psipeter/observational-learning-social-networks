@@ -9,7 +9,8 @@ sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 for sid in sids:
    if model_type in ['NEF_WM', 'NEF_RL']:
       # paramfile = sys.argv[3]
-      paramfile = "NEF_RL"
+      # paramfile = "NEF_RL"
+      paramfile = model_type
       optimize_string = f"python fit.py {dataset} {model_type} {sid}"
       fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile}"
       rerun_string = f"python rerun.py {dataset} {model_type} {sid}"

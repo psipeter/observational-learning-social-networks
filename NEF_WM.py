@@ -62,7 +62,7 @@ class Environment():
         return [self.colors[tidx], self.degrees[tidx]]
 
 
-def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, n_number=2000, n_working=1000):
+def build_network_WM(env, seed_net=0, z=0, n_neurons=200, n_number=200, n_working=200):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     net.z = z
@@ -173,14 +173,14 @@ def build_network_WM(env, n_neurons=1000, seed_net=0, z=0, n_number=2000, n_work
 
     return net
 
-def simulate_WM(env, n_neurons=1000, n_number=2000, n_working=1000, z=0, seed_sim=0, seed_net=0, progress_bar=True):
+def simulate_WM(env, n_neurons=200, n_number=200, n_working=200, z=0, seed_sim=0, seed_net=0, progress_bar=True):
     net = build_network_WM(env, n_neurons=n_neurons, n_number=n_number, n_working=n_working, seed_net=seed_net, z=z)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(dataset, sid, z, save=True):
+def run_WM(dataset, sid, z, n_neurons=200, n_number=200, n_working=200, save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -189,7 +189,7 @@ def run_WM(dataset, sid, z, save=True):
         print(f"sid {sid}, trial {trial}")
         env = Environment(dataset=dataset, sid=sid, trial=trial)
         seed_net = sid + 1000*trial
-        net, sim = simulate_WM(env=env, seed_net=seed_net, z=z, progress_bar=False)
+        net, sim = simulate_WM(env=env, seed_net=seed_net, z=z, n_neurons=n_neurons, n_number=n_number, n_working=n_working, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")

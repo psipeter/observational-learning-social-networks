@@ -7,6 +7,7 @@ import sys
 import time
 import optuna
 from NEF_RL import run_RL
+from NEF_WM import run_WM
 from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
@@ -14,6 +15,13 @@ def NEF_carrabin_loss(trial, model_type, sid):
         mu = trial.suggest_float("mu", 0.01, 1.0, step=0.01)
         n_error = trial.suggest_int("n_error", 30, 500, step=10)
         data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
+        loss = qid_abs_loss([], model_type, sid)
+    elif model_type=='NEF_WM':
+        n_number = trial.suggest_int("n_number", 30, 500, step=10)
+        # n_working = trial.suggest_int("n_working", 30, 500, step=10)
+        # data = run_RL("carrabin", sid, z=0, n_working=n_working)
+        data = run_WM("carrabin", sid, z=0, n_number=n_number)
+        # data = run_RL("carrabin", sid, z=0, n_working=n_working, n_number=n_number)
         loss = qid_abs_loss([], model_type, sid)
     return loss
 
