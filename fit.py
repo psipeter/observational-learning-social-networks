@@ -7,21 +7,21 @@ import sys
 import time
 import optuna
 from NEF_RL import run_RL
-from NEF_WM import run_WM
+from NEF_WM2 import run_WM
 from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
-        mu = trial.suggest_float("mu", 0.01, 1.0, step=0.01)
-        n_error = trial.suggest_int("n_error", 30, 500, step=10)
-        data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
+        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        data = run_RL("carrabin", sid, alpha, z=0, n_learning=n_learning, n_error=n_error)
         loss = qid_abs_loss([], model_type, sid)
-    elif model_type=='NEF_WM':
-        n_number = trial.suggest_int("n_number", 30, 500, step=10)
-        # n_working = trial.suggest_int("n_working", 30, 500, step=10)
-        # data = run_RL("carrabin", sid, z=0, n_working=n_working)
-        data = run_WM("carrabin", sid, z=0, n_number=n_number)
-        # data = run_RL("carrabin", sid, z=0, n_working=n_working, n_number=n_number)
+    if model_type=='NEF_WM':
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_memory = trial.suggest_int("n_memory", 20, 400, step=20)
+        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory, n_error=n_error)
         loss = qid_abs_loss([], model_type, sid)
     return loss
 
@@ -400,7 +400,7 @@ def likelihood(params, model_type, sid, noise=False, sigma=0):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, optuna_trials=300):
+def fit_carrabin(model_type, sid, optuna_trials=2):
     if model_type in ['bayes', 'bayesPE']:
         params = []
         # rmse = RMSE(params, model_type, sid)

@@ -22,7 +22,7 @@ trials = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")['trial'].unique
 start = time.time()
 
 dfs = []
-columns = ['type', 'sid', 'trial', 'stage', 'qid', 'n_learning', 'n_error', 'response']
+columns = ['type', 'sid', 'trial', 'stage', 'qid', 'n_other', 'n_error', 'response']
 for trial in trials:
     print(f"sid {sid}, trial {trial}")
     seed_net = sid + 1000*trial

@@ -104,14 +104,14 @@ def simulate_RL(env, alpha=0.2, z=0, n_neurons=100, n_learning=100, n_error=100,
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_RL(dataset, sid, slpha, z, n_neurons=100, n_learning=100, n_error=100, save=True):
+def run_RL(dataset, sid, alpha, z, n_neurons=100, n_learning=100, n_error=100, save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
-        env = Environment(dataset=dataset, sid=sid, trial=trial)
+        env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial)
         seed_net = sid + 1000*trial
         net, sim = simulate_RL(env=env, alpha=alpha, z=z, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, progress_bar=False)
         n_observations = 0

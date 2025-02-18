@@ -18,15 +18,20 @@ start = time.time()
 
 if dataset=='carrabin':
 	if model_type=='NEF_WM':
-		data = run_WM(dataset, sid, z=0)
-		param_list = [model_type, sid]
-	if model_type=='NEF_RL':
-		mu = params['mu'].unique()[0]
+		alpha = params['alpha'].unique()[0]
+		n_memory = params['n_memory'].unique()[0]
 		n_error = params['n_error'].unique()[0]
-		data = run_RL("carrabin", sid, z=0, s=[mu, mu, mu, mu, mu], n_error=n_error)
-		# activities = activity_RL(sid, z, s=[mu, mu, mu, mu, mu])
-		param_list = [model_type, sid, mu, n_error]
-		param_names = ['type', 'sid', 'mu', 'n_error']
+		data = run_WM("carrabin", sid, alpha=alpha, z=0, n_learning=n_learning, n_error=n_error)
+		param_list = [model_type, sid, alpha, n_learning, n_error]
+		param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error']
+		loss = qid_abs_loss([], model_type, sid)
+	if model_type=='NEF_RL':
+		alpha = params['alpha'].unique()[0]
+		n_learning = params['n_learning'].unique()[0]
+		n_error = params['n_error'].unique()[0]
+		data = run_RL("carrabin", sid, alpha=alpha, z=0, n_learning=n_learning, n_error=n_error)
+		param_list = [model_type, sid, alpha, n_learning, n_error]
+		param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error']
 		loss = qid_abs_loss([], model_type, sid)
 	performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
