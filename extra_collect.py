@@ -4,25 +4,16 @@ import subprocess
 import time
 
 experiment = sys.argv[1]
-dfs = []
 
-if experiment=='noise_RL':
-	n_neurons = [int(arg) for arg in sys.argv[2:-1]]
-	sids = pd.read_pickle("data/carrabin.pkl")['sid'].unique()
+if experiment=='noise_vs_neurons':
+	model_type = sys.argv[2]
+	sid = int(sys.argv[3])
+	alpha = sys.argv[4]
+	n_neurons = [int(arg) for arg in sys.argv[5:]]
 	label = sys.argv[-1]
-	for sid in sids:
-		for n1 in n_neurons:
-			for n2 in n_neurons:
-				dfs.append(pd.read_pickle(f"data/NEF_RL_noise_RL_carrabin_{sid}_{n1}_{n2}.pkl"))
-	noise_data = pd.concat(dfs, ignore_index=True)
-	noise_data.to_pickle(f"data/NEF_RL_noise_RL_carrabin_{label}.pkl")
-
-if experiment=='noise_WM':
-	sid = int(sys.argv[2])
-	n_neurons = [int(arg) for arg in sys.argv[3:-1]]
-	label = sys.argv[-1]
+	dfs = []
 	for n1 in n_neurons:
 		for n2 in n_neurons:
-			dfs.append(pd.read_pickle(f"data/NEF_WM_noise_WM_carrabin_{sid}_{n1}_{n2}.pkl"))
+			dfs.append(pd.read_pickle(f"data/noise_vs_neurons_{model_type}_{sid}_{n1}_{n2}.pkl"))
 	noise_data = pd.concat(dfs, ignore_index=True)
-	noise_data.to_pickle(f"data/NEF_WM_noise_WM_carrabin_{label}.pkl")
+	noise_data.to_pickle(f"data/noise_vs_neurons_{model_type}_{sid}_{label}.pkl")
