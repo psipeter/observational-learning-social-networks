@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # mu = float(sys.argv[4])
     paramfile = sys.argv[4]
     params = pd.read_pickle(f"data/{paramfile}_carrabin_{sid}_params.pkl")
-    mu = params['mu'].unique()[0]
+    alpha = params['mu'].unique()[0]
     trials = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")['trial'].unique()
     start = time.time()
     dfs = []
