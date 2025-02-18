@@ -35,7 +35,7 @@ if __name__ == '__main__':
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
-        dfs.append(noise_RL(sid, alpha, trial, n_learning, n_error))
+        dfs.append(noise_RL(sid, trial, alpha, n_learning, n_error))
     noise_data = pd.concat(dfs, ignore_index=True)
     noise_data.to_pickle(f"data/NEF_RL_noise_RL_carrabin_{sid}_{n_learning}_{n_error}.pkl")
     print(noise_data)
