@@ -12,12 +12,12 @@ from NEF_WM2 import simulate_WM, EnvironmentWM
 
 model_type = sys.argv[1]
 sid = int(sys.argv[2])
-alpha = float(sys.argv[3])
-n_other = int(sys.argv[4])
-n_error = int(sys.argv[5])
-# paramfile = sys.argv[4]
-# params = pd.read_pickle(f"data/{paramfile}_carrabin_{sid}_params.pkl")
-# alpha = params['alpha'].unique()[0]
+# alpha = float(sys.argv[3])
+n_other = int(sys.argv[3])
+n_error = int(sys.argv[4])
+# paramfile = sys.argv[3]
+params = pd.read_pickle(f"data/{model_type}_carrabin_feb19_params.pkl").query("sid==@sid")
+alpha = params['alpha'].unique()[0]
 trials = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")['trial'].unique()
 start = time.time()
 
