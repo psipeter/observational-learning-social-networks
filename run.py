@@ -56,7 +56,7 @@ if dataset=='jiang':
 		data = run_RL(dataset, sid, alpha=alpha, z=z, n_learning=n_learning, n_error=n_error)
 		param_list = [model_type, sid, alpha, n_learning, n_error, z, inv_temp]
 		param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error', 'z', 'inv_temp']
-    NLL = likelihood([inv_temp], model_type, sid)
+	NLL = likelihood([inv_temp], model_type, sid)
 	mcfadden_r2 = compute_mcfadden(NLL, sid)
 	columns = ['type', 'sid', 'NLL', 'McFadden R2']
 	performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]],columns=columns)
