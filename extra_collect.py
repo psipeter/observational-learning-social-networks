@@ -8,8 +8,8 @@ experiment = sys.argv[1]
 if experiment=='noise_vs_neurons':
 	model_type = sys.argv[2]
 	sid = int(sys.argv[3])
-	alpha = sys.argv[4]
-	n_neurons = [int(arg) for arg in sys.argv[5:-2]]
+	# alpha = sys.argv[4]
+	n_neurons = [int(arg) for arg in sys.argv[4:-2]]
 	label = sys.argv[-1]
 	dfs = []
 	for n1 in n_neurons:
