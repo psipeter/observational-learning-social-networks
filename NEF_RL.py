@@ -122,12 +122,12 @@ def run_RL(dataset, sid, alpha, z, n_neurons=100, n_learning=100, n_error=100, s
                 for o in range(len(observations)):
                     n_observations += 1
                     tidx = int((n_observations*env.T)/env.dt)-2
-                    estimate = sim.data[net.probe_value][tidx][0]
+                    estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
                     df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
                     dfs.append(df)
             elif dataset=='carrabin':
                 tidx = int((stage*env.T)/env.dt)-2
-                estimate = sim.data[net.probe_value][tidx][0]
+                estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
                 df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)
