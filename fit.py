@@ -16,14 +16,31 @@ def NEF_carrabin_loss(trial, model_type, sid):
         n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
         n_error = trial.suggest_int("n_error", 20, 400, step=20)
         data = run_RL("carrabin", sid, alpha, z=0, n_learning=n_learning, n_error=n_error)
-        loss = qid_abs_loss([], model_type, sid)
     if model_type=='NEF_WM':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_memory = trial.suggest_int("n_memory", 20, 400, step=20)
         n_error = trial.suggest_int("n_error", 20, 400, step=20)
         data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory, n_error=n_error)
-        loss = qid_abs_loss([], model_type, sid)
+    loss = qid_abs_loss([], model_type, sid)
     return loss
+
+def NEF_jiang_loss(trial, model_type, sid):
+    if model_type=='NEF_RL':
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
+        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
+        inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
+        data = run_RL("jiang", sid, alpha, z=z, n_learning=n_learning, n_error=n_error)
+    if model_type=='NEF_WM':
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_memory = trial.suggest_int("n_memory", 20, 400, step=20)
+        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
+        inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
+        data = run_WM("jiang", sid, alpha, z=z, n_memory=n_memory, n_error=n_error)
+    NLL = likelihood([inv_temp], model_type, sid)
+    return NLL
 
 def compute_mcfadden(NLL, sid):
     null_log_likelihood = 0
@@ -39,9 +56,9 @@ def compute_mcfadden(NLL, sid):
     return mcfadden_r2
 
 def get_param_names(model_type):
-    if model_type in ['RLz', 'NEF_RL']:
+    if model_type in ['RLz']:
         param_names = ['type', 'sid', 'z', 'b', 'inv_temp']
-    if model_type in ['DGz', 'NEF_WM']:
+    if model_type in ['DGz']:
         param_names = ['type', 'sid', 'z', 'inv_temp']
     if model_type in ['DGn']:
         param_names = ['type', 'sid', 'inv_temp']
@@ -443,23 +460,35 @@ def fit_carrabin(model_type, sid, optuna_trials=2):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid):
-    param0, bounds = get_param_init_bounds(model_type)
-    result = scipy.optimize.minimize(
-        fun=likelihood,
-        x0=param0,
-        args=(model_type, sid),
-        bounds=bounds,
-        options={'disp':False})
-    NLL = result.fun
-    mcfadden_r2 = compute_mcfadden(NLL, sid)
+def fit_jiang(model_type, sid, optuna_trials=2):
+    if model_type in ['NEF_RL', 'NEF_WM']:
+        study = optuna.create_study(direction="minimize")
+        study.optimize(lambda trial: NEF_jiang_loss(trial, model_type, sid), n_trials=optuna_trials)
+        best_params = study.best_trial.params
+        NLL = study.best_trial.value
+        param_names = ["type", "sid"]
+        params = [model_type, sid]
+        for key, value in best_params.items():
+            param_names.append(key)
+            params.append(value)
+        print(f"{len(study.trials)} trials completed. Best value is {NLL:.4} with parameters:")
+    else:
+        param0, bounds = get_param_init_bounds(model_type)
+        result = scipy.optimize.minimize(
+            fun=likelihood,
+            x0=param0,
+            args=(model_type, sid),
+            bounds=bounds,
+            options={'disp':False})
+        NLL = result.fun
+        param_names = get_param_names(model_type)
+        params = list(result.x)
+        params.insert(0, sid)
+        params.insert(0, model_type)
     # Save Results and Best Fit Parameters
+    mcfadden_r2 = compute_mcfadden(NLL, sid)
     performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]], columns=['type', 'sid', 'NLL', 'McFadden R2'])
     performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
-    param_names = get_param_names(model_type)
-    params = list(result.x)
-    params.insert(0, sid)
-    params.insert(0, model_type)
     fitted_params = pd.DataFrame([params], columns=param_names)
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params

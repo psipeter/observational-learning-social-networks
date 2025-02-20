@@ -21,9 +21,9 @@ if dataset=='carrabin':
 		alpha = params['alpha'].unique()[0]
 		n_memory = params['n_memory'].unique()[0]
 		n_error = params['n_error'].unique()[0]
-		data = run_WM("carrabin", sid, alpha=alpha, z=0, n_learning=n_learning, n_error=n_error)
-		param_list = [model_type, sid, alpha, n_learning, n_error]
-		param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error']
+		data = run_WM("carrabin", sid, alpha=alpha, z=0, n_memory=n_memory, n_error=n_error)
+		param_list = [model_type, sid, alpha, n_memory, n_error]
+		param_names = ['type', 'sid', 'alpha', 'n_memory', 'n_error']
 		loss = qid_abs_loss([], model_type, sid)
 	if model_type=='NEF_RL':
 		alpha = params['alpha'].unique()[0]
