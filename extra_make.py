@@ -14,7 +14,7 @@ if experiment=='noise_vs_neurons':
 	for n1 in n_neurons:
 		for n2 in n_neurons:
 			n += 1
-			run_string = f"python noise_vs_neurons.py {model_type} {sid} {alpha} {n1} {n2}"
+			run_string = f"python noise_vs_neurons.py {model_type} {sid} {n1} {n2}"
 			file_string = f'extra_{n}.sh'
 			with open (file_string, 'w') as rsh:
 				rsh.write('''#!/bin/bash''')
