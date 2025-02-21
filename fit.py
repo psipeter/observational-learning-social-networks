@@ -29,18 +29,18 @@ def NEF_carrabin_loss(trial, model_type, sid):
 def NEF_jiang_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
+        # n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
         n_error = trial.suggest_int("n_error", 20, 400, step=20)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
-        data = run_RL("jiang", sid, alpha, z=z, n_learning=n_learning, n_error=n_error)
+        data = run_RL("jiang", sid, alpha, z=z, n_error=n_error)
     if model_type=='NEF_WM':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_memory = trial.suggest_int("n_memory", 20, 400, step=20)
-        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        # n_error = trial.suggest_int("n_error", 20, 400, step=20)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
-        data = run_WM("jiang", sid, alpha, z=z, n_memory=n_memory, n_error=n_error)
+        data = run_WM("jiang", sid, alpha, z=z, n_memory=n_memory)
     NLL = likelihood([inv_temp], model_type, sid)
     return NLL
 
@@ -481,7 +481,7 @@ def fit_carrabin(model_type, sid, optuna_trials=2):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid, optuna_trials=2):
+def fit_jiang(model_type, sid, optuna_trials=400):
     if model_type in ['NEF_RL', 'NEF_WM']:
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda trial: NEF_jiang_loss(trial, model_type, sid), n_trials=optuna_trials)
