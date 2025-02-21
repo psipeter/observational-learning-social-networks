@@ -8,8 +8,6 @@ sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 
 for sid in sids:
    if model_type in ['NEF_WM', 'NEF_RL']:
-      # paramfile = sys.argv[3]
-      # paramfile = "NEF_RL"
       paramfile = model_type
       optimize_string = f"python fit.py {dataset} {model_type} {sid}"
       fit_string = f"python run.py {dataset} {model_type} {sid} {paramfile}"
@@ -28,7 +26,7 @@ for sid in sids:
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
       rsh.write("\n")
-      rsh.write('''#SBATCH --time=24:0:0''')
+      rsh.write('''#SBATCH --time=4:0:0''')
       if model_type in ['NEF_WM', 'NEF_RL']:
          rsh.write("\n")
          rsh.write(optimize_string)      

@@ -113,8 +113,8 @@ def get_param_init_bounds(model_type):
         param0 = [0.1, 0.05]
         bounds = [(0,1), (0.01, 0.1)]
     if model_type in ['RL_nl', 'RL_ne']:
-        param0 = [0.1, 0.05, 0.2]
-        bounds = [(0,1), (0.01, 0.1), (0.01, 1)]
+        param0 = [0.1, 0.05, 0.0]
+        bounds = [(0,1), (0.01, 0.1), (-1, 1)]
     if model_type in ['RL_n2']:
         param0 = [0.1, 0.05]
         bounds = [(0,1), (0.01,0.2)]
@@ -203,14 +203,14 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 expectation += LR*error + eps
                 expectation = np.clip(expectation, -1, 1)
             elif model_type=='RL_nl':
-                LR = params[0] *(1 - s*params[2])  # LR decreases linearly with stage
+                LR = params[0] *(1 + s*params[2])  # LR changes linearly with stage
                 LR = LR.clip(0, 1)
                 eps = rng.normal(0, params[1])
                 error = color - expectation
                 expectation += LR*error + eps
                 expectation = np.clip(expectation, -1, 1)
             elif model_type=='RL_ne':
-                LR = params[0] * np.exp(-s*params[2])  # LR decreases by exponentially with stage
+                LR = params[0] * np.exp(s*params[2])  # LR changes by exponentially with stage
                 LR = LR.clip(0, 1)
                 eps = rng.normal(0, params[1])
                 error = color - expectation
