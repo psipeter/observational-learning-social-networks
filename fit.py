@@ -68,6 +68,8 @@ def get_param_names(model_type):
         param_names = ['type', 'sid', 'mu']
     if model_type in ['RL_n', 'RL_n2']:
         param_names = ['type', 'sid', 'mu', 'sigma']
+    if model_type in ['RL_nl', 'RL_ne']:
+        param_names = ['type', 'sid', 'mu', 'sigma', 'k']
     if model_type in ['RL_nn']:
         param_names = ['type', 'sid', 'mu', 'sigma', 'v1']
     if model_type in ['bayes', 'bayesPE']:
@@ -110,6 +112,9 @@ def get_param_init_bounds(model_type):
     if model_type in ['RL_n']:
         param0 = [0.1, 0.05]
         bounds = [(0,1), (0.01, 0.1)]
+    if model_type in ['RL_nl', 'RL_ne']:
+        param0 = [0.1, 0.05, 0.2]
+        bounds = [(0,1), (0.01, 0.1), (0.01, 1)]
     if model_type in ['RL_n2']:
         param0 = [0.1, 0.05]
         bounds = [(0,1), (0.01,0.2)]
@@ -177,11 +182,11 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
             dE = rng.uniform((1-noise_e)*expectation, (1+noise_e)*expectation)
             expectation = dE
             expectation = np.clip(expectation, -1, 1)
-    if model_type in ['RL', 'RL_n', 'RL_n2', 'RL_nn']:
+    if model_type in ['RL', 'RL_n', 'RL_nl', 'RL_ne', 'RL_n2', 'RL_nn']:
         subdata = human.query("trial==@trial & stage<=@stage")
         colors = subdata['color'].to_numpy()
         expectation = 0
-        for color in colors:
+        for s, color in enumerate(colors):
             if model_type=='RL':
                 LR = params[0]
                 error = color - expectation
@@ -193,6 +198,20 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
                 expectation += LR*error
             elif model_type=='RL_n2':
                 LR = params[0]
+                eps = rng.normal(0, params[1])
+                error = color - expectation
+                expectation += LR*error + eps
+                expectation = np.clip(expectation, -1, 1)
+            elif model_type=='RL_nl':
+                LR = params[0] *(1 - s*params[2])  # LR decreases linearly with stage
+                LR = LR.clip(0, 1)
+                eps = rng.normal(0, params[1])
+                error = color - expectation
+                expectation += LR*error + eps
+                expectation = np.clip(expectation, -1, 1)
+            elif model_type=='RL_ne':
+                LR = params[0] * np.exp(-s*params[2])  # LR decreases by exponentially with stage
+                LR = LR.clip(0, 1)
                 eps = rng.normal(0, params[1])
                 error = color - expectation
                 expectation += LR*error + eps
@@ -448,7 +467,7 @@ def fit_carrabin(model_type, sid, optuna_trials=2):
             args=(model_type, sid),
             bounds=bounds,
             method='L-BFGS-B',
-            options={'maxiter': 5})
+            options={'maxiter': 10})
         loss = result.fun
         params = list(result.x)
         param_names = get_param_names(model_type)
