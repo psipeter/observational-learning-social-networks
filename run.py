@@ -46,22 +46,28 @@ if dataset=='carrabin':
 if dataset=='jiang':
 	if model_type=='NEF_WM':
 		alpha = params['alpha'].unique()[0]
-		n_memory = params['n_memory'].unique()[0]
-		n_error = params['n_error'].unique()[0]
 		z = params['z'].unique()[0]
 		inv_temp = params['inv_temp'].unique()[0]
-		data = run_WM(dataset, sid, alpha=alpha, z=z, n_memory=n_memory, n_error=n_error)
-		param_list = [model_type, sid, alpha, n_memory, n_error, z, inv_temp]
-		param_names = ['type', 'sid', 'alpha', 'n_memory', 'n_error', 'z', 'inv_temp']
+		data = run_WM(dataset, sid, alpha=alpha, z=z)
+		param_list = [model_type, sid, alpha, z, inv_temp]
+		param_names = ['type', 'sid', 'alpha', 'z', 'inv_temp']
+		# n_memory = params['n_memory'].unique()[0]
+		# n_error = params['n_error'].unique()[0]
+		# data = run_WM(dataset, sid, alpha=alpha, z=z, n_memory=n_memory, n_error=n_error)
+		# param_list = [model_type, sid, alpha, n_memory, n_error, z, inv_temp]
+		# param_names = ['type', 'sid', 'alpha', 'n_memory', 'n_error', 'z', 'inv_temp']
 	if model_type=='NEF_RL':
 		alpha = params['alpha'].unique()[0]
-		n_learning = params['n_learning'].unique()[0]
-		n_error = params['n_error'].unique()[0]
 		z = params['z'].unique()[0]
 		inv_temp = params['inv_temp'].unique()[0]
-		data = run_RL(dataset, sid, alpha=alpha, z=z, n_learning=n_learning, n_error=n_error)
-		param_list = [model_type, sid, alpha, n_learning, n_error, z, inv_temp]
-		param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error', 'z', 'inv_temp']
+		data = run_RL(dataset, sid, alpha=alpha, z=z)
+		param_list = [model_type, sid, alpha, z, inv_temp]
+		param_names = ['type', 'sid', 'alpha', 'z', 'inv_temp']
+		# n_learning = params['n_learning'].unique()[0]
+		# n_error = params['n_error'].unique()[0]
+		# data = run_RL(dataset, sid, alpha=alpha, z=z, n_learning=n_learning, n_error=n_error)
+		# param_list = [model_type, sid, alpha, n_learning, n_error, z, inv_temp]
+		# param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error', 'z', 'inv_temp']
 	NLL = likelihood([inv_temp], model_type, sid)
 	mcfadden_r2 = compute_mcfadden(NLL, sid)
 	columns = ['type', 'sid', 'NLL', 'McFadden R2']

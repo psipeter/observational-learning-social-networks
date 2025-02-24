@@ -5,71 +5,74 @@ import nengo
 import pandas as pd
 
 class EnvironmentRL():
-    def __init__(self, dataset, sid, trial, T=1, dt=0.001, dim_context=5, seed_env=0):
+    def __init__(self, dataset, sid, trial, alpha=0.2, z=0, T=1, dt=0.001, dim_context=5, seed_env=0):
+        self.alpha = alpha
+        self.z = z
         self.T = T
         self.dt = dt
         self.sid = sid
         self.trial = trial
         self.dataset = dataset
         self.empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid & trial==@trial")
-        self.color = 0
-        self.degree = 0
-        self.stage = 0
         self.dim_context = dim_context
         self.rng = np.random.RandomState(seed=seed_env)
         self.context = self.rng.rand(self.dim_context)
         self.context = self.context / np.linalg.norm(self.context)
         if self.dataset=='jiang':
             self.n_neighbors = len(self.empirical['who'].unique()) - 1
-            self.Tall = self.T + 3*self.n_neighbors*self.T - self.dt
+            self.Tall = 3*self.T + 3*self.n_neighbors*self.T - self.dt
             self.stages = range(4)
         if self.dataset=='carrabin':
             self.Tall = 5*self.T - self.dt
             self.stages = range(1, 6)
         # create input arrays
         self.colors = []
-        self.degrees = []
+        self.weights = []
         tt = int(self.T / self.dt)
         if self.dataset=='jiang':
             for stage in self.stages:
                 if stage==0:
                     color = self.empirical.query("stage==@stage")['color'].to_numpy()[0]
-                    degree = 0
-                    self.colors.extend(color * np.ones((tt, 1)))
-                    self.degrees.extend(degree * np.ones((tt, 1)))
-                else:
+                    weight = 1
+                    self.colors.extend(color * np.ones((3*tt, 1)))
+                    self.weights.extend(weight * np.ones((3*tt, 1)))
+                if stage==1:
                     for n in range(self.n_neighbors):
                         color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
-                        degree = 0 if stage==1 else self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
+                        weight = self.alpha
                         self.colors.extend(color * np.ones((tt, 1)))
-                        self.degrees.extend(degree * np.ones((tt, 1)))
+                        self.weights.extend(weight * np.ones((tt, 1)))
+                if stage>1:
+                    for n in range(self.n_neighbors):
+                        color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
+                        weight = self.alpha + self.z*self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
+                        self.colors.extend(color * np.ones((tt, 1)))
+                        self.weights.extend(weight * np.ones((tt, 1)))
         if self.dataset=='carrabin':
             for stage in self.stages:
                 color = self.empirical.query("stage==@stage")['color'].unique()[0]
                 self.colors.extend(color * np.ones((tt, 1)))
-                self.degrees.extend(0 * np.ones((tt, 1)))
+                self.weights.extend(self.alpha * np.ones((tt, 1)))
         self.colors = np.array(self.colors).flatten()
-        self.degrees = np.array(self.degrees).flatten()
+        self.weights = np.array(self.weights).flatten()
                     
     def sample(self, t):
         tidx = int(t/self.dt)
-        return [self.colors[tidx], self.degrees[tidx]]
+        return [self.colors[tidx], self.weights[tidx]]
 
-def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0, alpha=0.2, a=5e-5, z=0, syn=0.01):
+def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0, a=6e-5, syn=0.01):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
     func_obs = lambda t: env.sample(t)[0]
-    func_degree = lambda t: env.sample(t)[1]
+    func_weight = lambda t: env.sample(t)[1]
     func_context = lambda t: env.context
-    func_alpha = lambda t: alpha
     zero = lambda x: 0
 
     with net:
         # external inputs
         input_obs = nengo.Node(func_obs)
-        input_degree = nengo.Node(func_degree)
+        input_weight = nengo.Node(func_weight)
         input_context = nengo.Node(func_context)
-        input_alpha = nengo.Node(func_alpha)
         # ensembles
         obs = nengo.Ensemble(n_neurons, 1)
         weight = nengo.Ensemble(n_neurons, 1)
@@ -79,8 +82,7 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         # connections
         nengo.Connection(input_obs, obs)
         nengo.Connection(input_context, context)
-        nengo.Connection(input_degree, weight, transform=z)
-        nengo.Connection(input_alpha, weight)
+        nengo.Connection(input_weight, weight)
         C = nengo.Connection(context, value, learning_rule_type=nengo.PES(learning_rate=a), function=zero, synapse=syn)
         nengo.Connection(obs, error.input_a, synapse=syn)
         nengo.Connection(value, error.input_a, transform=-1, synapse=syn)
@@ -88,7 +90,7 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         nengo.Connection(error.output, C.learning_rule, synapse=syn, transform=-1)
         # probes
         net.probe_input_obs = nengo.Probe(input_obs, synapse=0)
-        net.probe_input_degree = nengo.Probe(input_degree, synapse=0)
+        net.probe_input_weight = nengo.Probe(input_weight, synapse=0)
         net.probe_obs = nengo.Probe(obs, synapse=syn)
         net.probe_weight = nengo.Probe(weight, synapse=syn)
         net.probe_value = nengo.Probe(value, synapse=syn)
@@ -97,8 +99,8 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         # net.probe_error_neurons = nengo.Probe(error.neurons, synapse=syn)
     return net
 
-def simulate_RL(env, alpha=0.2, z=0, n_neurons=100, n_learning=100, n_error=100, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_RL(env, alpha=alpha, z=z, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net)
+def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_RL(env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
@@ -111,9 +113,9 @@ def run_RL(dataset, sid, alpha, z, n_neurons=100, n_learning=100, n_error=100, s
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
-        env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial)
+        env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z)
         seed_net = sid + 1000*trial
-        net, sim = simulate_RL(env=env, alpha=alpha, z=z, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, progress_bar=False)
+        net, sim = simulate_RL(env=env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")

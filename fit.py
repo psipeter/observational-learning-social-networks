@@ -7,7 +7,7 @@ import sys
 import time
 import optuna
 from NEF_RL import run_RL
-from NEF_WM2 import run_WM
+from NEF_WM import run_WM
 from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
@@ -292,8 +292,7 @@ def get_expectations_jiang(model_type, params, trial, stage, sid, noise=False, s
         expectations = nef_data.query("trial==@trial & stage<=@stage")['estimate'].to_numpy()
     if model_type == 'RLz':
         z = params[0]
-        b = params[1]
-        learning_rates = [1, b, b, b]
+        alpha = params[1]
         subdata = human.query("trial==@trial & stage<=@stage")
         observations = subdata['color'].to_numpy()
         RDs = subdata['RD'].to_numpy()
@@ -301,10 +300,13 @@ def get_expectations_jiang(model_type, params, trial, stage, sid, noise=False, s
         expectations = []
         for o, obs in enumerate(observations):
             stg = int(subdata.iloc[o]['stage'])
-            RD = 0 if stg<2 else RDs[o]
-            learning_rate = learning_rates[stg]
+            if stg==0:
+                LR = 1
+            if stg==1:
+                LR = alpha
+            if stg>1:
+                RL = alpha + z*RDs[o]
             error = obs - expectation
-            LR = learning_rate + z*RD
             LR = np.clip(LR, 0, 1)
             expectation += LR * error
             expectations.append(expectation)

@@ -4,192 +4,109 @@ import seaborn as sns
 import nengo
 import pandas as pd
 
-class Environment():
-    def __init__(self, dataset, sid, trial, t_show=1.0, t_buffer=1.0, dt=0.001):
+class EnvironmentWM():
+    def __init__(self, dataset, sid, trial, alpha=0.2, z=0, T=1, dt=0.001):
+        self.alpha = alpha
+        self.z = z
+        self.T = T
         self.dt = dt
         self.sid = sid
         self.trial = trial
         self.dataset = dataset
-        self.t_show = t_show
-        self.t_buffer = t_buffer
-        self.T = self.t_show + self.t_buffer
         self.empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid & trial==@trial")
         if self.dataset=='jiang':
             self.n_neighbors = len(self.empirical['who'].unique()) - 1
-            self.Tall = self.T + 3*self.n_neighbors*self.T - self.dt
+            self.Tall = 3*self.T + 3*self.n_neighbors*self.T - self.dt
             self.stages = range(4)
         if self.dataset=='carrabin':
-            self.stages = range(1, 6)
             self.Tall = 5*self.T - self.dt
-        self.color = 0
-        self.degree = 0
-        self.stage = 0
+            self.stages = range(1, 6)
         # create input arrays
         self.colors = []
-        self.degrees = []
-        tt1 = int(self.t_show / self.dt)
-        tt2 = int(self.t_buffer / self.dt)
+        self.weights = []
+        tt = int(self.T / self.dt)
         if self.dataset=='jiang':
             for stage in self.stages:
                 if stage==0:
                     color = self.empirical.query("stage==@stage")['color'].to_numpy()[0]
-                    degree = 0
-                    self.colors.extend(color * np.ones((tt1, 1)))
-                    self.colors.extend(np.zeros((tt2, 1)))
-                    self.degrees.extend(degree * np.ones((tt1, 1)))
-                    self.degrees.extend(np.zeros((tt2, 1)))
-                else:
+                    weight = 1
+                    self.colors.extend(color * np.ones((3*tt, 1)))
+                    self.weights.extend(weight * np.ones((3*tt, 1)))
+                if stage==1:
                     for n in range(self.n_neighbors):
                         color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
-                        degree = 0 if stage==1 else self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
-                        self.colors.extend(color * np.ones((tt1, 1)))
-                        self.colors.extend(np.zeros((tt2, 1)))
-                        self.degrees.extend(degree * np.ones((tt1, 1)))
-                        self.degrees.extend(np.zeros((tt2, 1)))
+                        weight = self.alpha
+                        self.colors.extend(color * np.ones((tt, 1)))
+                        self.weights.extend(weight * np.ones((tt, 1)))
+                if stage>1:
+                    for n in range(self.n_neighbors):
+                        color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
+                        weight = self.alpha + self.z*self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
+                        self.colors.extend(color * np.ones((tt, 1)))
+                        self.weights.extend(weight * np.ones((tt, 1)))
         if self.dataset=='carrabin':
             for stage in self.stages:
                 color = self.empirical.query("stage==@stage")['color'].unique()[0]
-                degree = 0
-                self.colors.extend(color * np.ones((tt1, 1)))
-                self.colors.extend(np.zeros((tt2, 1)))
-                self.degrees.extend(degree * np.ones((tt1, 1)))
-                self.degrees.extend(np.zeros((tt2, 1)))
+                self.colors.extend(color * np.ones((tt, 1)))
+                self.weights.extend(self.alpha * np.ones((tt, 1)))
         self.colors = np.array(self.colors).flatten()
-        self.degrees = np.array(self.degrees).flatten()
+        self.weights = np.array(self.weights).flatten()
                     
     def sample(self, t):
         tidx = int(t/self.dt)
-        return [self.colors[tidx], self.degrees[tidx]]
+        return [self.colors[tidx], self.weights[tidx]]
 
+def build_network_WM(env, a=5e-5, n_neurons=100, n_memory=100, n_error=100, seed_net=0, syn_ff=0.01, syn_fb=0.1, w_ff=0.1):
 
-def build_network_WM(env, seed_net=0, z=0, n_neurons=200, n_number=200, n_working=200):
     nengo.rc.set("decoder_cache", "enabled", "False")
     net = nengo.Network(seed=seed_net)
-    net.z = z
-    net.encoders = nengo.dists.Choice([[1]])
-    net.intercepts = nengo.dists.Uniform(0, 1)
-    net.eval_points = np.linspace(-1, 1, 1000).reshape(-1,1)
-    net.r1 = 20 if env.dataset=='jiang' else 5
-    net.r2 = 11 if env.dataset=='jiang' else 3
-    net.r3 = 0.9
-    net.r4 = 3
-    net.t1 = 0.05
-    net.t2 = 25
-
     func_obs = lambda t: env.sample(t)[0]
-    func_degree = lambda t: env.sample(t)[1]
-    func_multiply = lambda x: x[0]*x[1]
-    func_inverse = lambda x: 1/(x+10) if env.dataset=='jiang' else 1/(x+2+2)
-    func_center = lambda x: x-10 if env.dataset=='jiang' else x-2
-    func_stop2 = lambda x: 0 if np.abs(x)>0.1 else 1
-    func_stop3 = lambda x: 1 if np.abs(x)>0.1 else 0
-    func_differentiate1 = lambda x: 2*np.abs(x)
-    func_differentiate2 = lambda x: -2*np.abs(x)
-    func_power = lambda x: np.abs(x)
-
-    w_stop = -10*np.ones((n_neurons, 1))
+    func_weight = lambda t: env.sample(t)[1]
 
     with net:
-        # inputs
-        node_stim = nengo.Node(func_obs)
-        node_degree = nengo.Node(func_degree)
-        
-        # neural populations
-        ens_stim = nengo.Ensemble(n_neurons, 1)
-        ens_differentiator = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
-        ens_number_memory = nengo.Ensemble(n_number, 1)
-        ens_number = nengo.Ensemble(n_neurons, 1, radius=net.r1)
-        ens_centered = nengo.Ensemble(n_neurons, 1, radius=net.r2)
-        ens_weight = nengo.Ensemble(n_neurons, 1, radius=net.r3)
-        ens_scaled_weight = nengo.Ensemble(n_neurons, 1)
-        ens_degree = nengo.Ensemble(n_neurons, 1)
-        ens_d1 = nengo.Ensemble(2*n_neurons, 2, radius=net.r4)
-        ens_d2 = nengo.Ensemble(n_neurons, 1)
-        ens_d3 = nengo.Ensemble(n_neurons, 1)
-        ens_memory = nengo.Ensemble(n_working, 1)
-        ens_old = nengo.Ensemble(n_working, 1)
-        ens_stop2 = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
-        ens_stop3 = nengo.Ensemble(n_neurons, 1, encoders=net.encoders, intercepts=net.intercepts)
-
-        # input signals
-        nengo.Connection(node_stim, ens_stim, synapse=None)
-        nengo.Connection(node_degree, ens_degree, synapse=None)
-        
-        # count up based on changes in the input signals
-        nengo.Connection(ens_stim, ens_differentiator, synapse=0.01, function=func_differentiate1)
-        nengo.Connection(ens_stim, ens_differentiator, synapse=0.1, function=func_differentiate2)
-        nengo.Connection(ens_differentiator, ens_number_memory, synapse=0.2, transform=net.t1)
-        nengo.Connection(ens_number_memory, ens_number_memory, synapse=0.2)
-        nengo.Connection(ens_number_memory, ens_number, transform=net.t2, synapse=0.1)
-
-        # compute weight = 1/N from number memory
-        nengo.Connection(ens_number, ens_centered, synapse=0.01, function=func_center)
-        nengo.Connection(ens_centered, ens_weight, synapse=0.03, function=func_inverse, eval_points=net.eval_points)
-        nengo.Connection(ens_weight, ens_scaled_weight, synapse=0.03, function=func_power)
-
-        # compute error between current observation and WM value stored in "old" buffer  
-        # then pass that error, times the current weight, to D2
-        # also add degree into current weight, as represented in D1
-        nengo.Connection(ens_stim, ens_d1[0], synapse=0.01)
-        nengo.Connection(ens_scaled_weight, ens_d1[1], synapse=0.03)
-        nengo.Connection(ens_d1, ens_d2, synapse=0.01, function=func_multiply)
-        nengo.Connection(ens_old, ens_d1[0], synapse=0.01, transform=-1)
-        nengo.Connection(ens_degree, ens_d1[1], synapse=0.01, transform=net.z)
-        
-        # update the WM value stored in the "memory" buffer according to the error passed to D2
-        # and the stable WM value stored in the "old" buffer
-        nengo.Connection(ens_d2, ens_memory, synapse=0.01, transform=3)
-        nengo.Connection(ens_memory, ens_memory, synapse=0.1)
-        nengo.Connection(ens_memory, ens_d2, synapse=0.01, transform=-1)
-        nengo.Connection(ens_old, ens_d2, synapse=0.01)
-
-        # update the value in "old" to the value in "memory" 
-        nengo.Connection(ens_memory, ens_d3, synapse=0.01)
-        nengo.Connection(ens_d3, ens_old, synapse=0.01, transform=3)
-        nengo.Connection(ens_old, ens_d3, synapse=0.01, transform=-1)
-        nengo.Connection(ens_old, ens_old, synapse=0.1)
-
-        # alternatively updates "memory" and "old":
-        # the former is updated while the simulus is present,
-        # and the latter is updated during the inter-stimulus interval
-        nengo.Connection(ens_stim, ens_stop2, synapse=0.01, function=func_stop2)
-        nengo.Connection(ens_stim, ens_stop3, synapse=0.01, function=func_stop3)
-        nengo.Connection(ens_stop2, ens_d2.neurons, synapse=0.01, transform=w_stop)
-        nengo.Connection(ens_stop3, ens_d3.neurons, synapse=0.01, transform=w_stop)
-
-        # probes to decode neural activity into represented quantities
-        net.probe_stim = nengo.Probe(node_stim, synapse=None)
-        net.probe_stim = nengo.Probe(ens_stim, synapse=0.01)
-        net.probe_stop2 = nengo.Probe(ens_stop2, synapse=0.01)
-        net.probe_stop3 = nengo.Probe(ens_stop3, synapse=0.01)
-        net.probe_number = nengo.Probe(ens_number, synapse=0.03)
-        net.probe_weight = nengo.Probe(ens_weight, synapse=0.03)
-        net.probe_scaled_weight = nengo.Probe(ens_scaled_weight, synapse=0.03)
-        net.probe_d1 = nengo.Probe(ens_d1, synapse=0.03)
-        net.probe_d2 = nengo.Probe(ens_d2, synapse=0.01)
-        net.probe_d3 = nengo.Probe(ens_d3, synapse=0.01)
-        net.probe_memory = nengo.Probe(ens_memory, synapse=0.01)
-        net.probe_old = nengo.Probe(ens_old, synapse=0.01)
+        # external inputs
+        input_obs = nengo.Node(func_obs)
+        input_weight = nengo.Node(func_weight)
+        # ensembles
+        obs = nengo.Ensemble(n_neurons, 1)
+        weight = nengo.Ensemble(n_neurons, 1)
+        value = nengo.Ensemble(n_memory, 1)
+        error = nengo.networks.Product(n_error, 1)
+        # connections
+        nengo.Connection(input_obs, obs)
+        nengo.Connection(input_weight, weight)
+        nengo.Connection(obs, error.input_a, synapse=syn_ff)
+        nengo.Connection(value, error.input_a, synapse=syn_ff, transform=-1)
+        nengo.Connection(weight, error.input_b, synapse=syn_ff)
+        nengo.Connection(error.output, value, synapse=syn_ff, transform=w_ff)
+        nengo.Connection(value, value, synapse=syn_fb)
+        # probes
+        net.probe_input_obs = nengo.Probe(input_obs, synapse=0)
+        net.probe_input_weight = nengo.Probe(input_weight, synapse=0)
+        net.probe_obs = nengo.Probe(obs, synapse=syn_ff)
+        net.probe_weight = nengo.Probe(weight, synapse=syn_ff)
+        net.probe_value = nengo.Probe(value, synapse=syn_ff)
+        net.probe_error = nengo.Probe(error.output, synapse=syn_ff)
 
     return net
 
-def simulate_WM(env, n_neurons=200, n_number=200, n_working=200, z=0, seed_sim=0, seed_net=0, progress_bar=True):
-    net = build_network_WM(env, n_neurons=n_neurons, n_number=n_number, n_working=n_working, seed_net=seed_net, z=z)
+def simulate_WM(env, n_neurons=100, n_memory=100, n_error=100, seed_sim=0, seed_net=0, progress_bar=True):
+    net = build_network_WM(env, n_neurons=n_neurons, n_memory=n_memory, n_error=n_error, seed_net=seed_net)
     sim = nengo.Simulator(net, seed=seed_sim, progress_bar=progress_bar)
     with sim:
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_WM(dataset, sid, z, n_neurons=200, n_number=200, n_working=200, save=True):
+def run_WM(dataset, sid, alpha, z, n_neurons=100, n_memory=100, n_error=100, save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
-    trials = empirical['trial'].unique()
+    trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
-        env = Environment(dataset=dataset, sid=sid, trial=trial)
+        env = EnvironmentWM(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z)
         seed_net = sid + 1000*trial
-        net, sim = simulate_WM(env=env, seed_net=seed_net, z=z, n_neurons=n_neurons, n_number=n_number, n_working=n_working, progress_bar=False)
+        net, sim = simulate_WM(env=env, n_neurons=n_neurons, n_memory=n_memory, n_error=n_error, seed_net=seed_net, progress_bar=False)
         n_observations = 0
         for stage in env.stages:
             subdata = empirical.query("trial==@trial and stage==@stage")
@@ -198,12 +115,12 @@ def run_WM(dataset, sid, z, n_neurons=200, n_number=200, n_working=200, save=Tru
                 for o in range(len(observations)):
                     n_observations += 1
                     tidx = int((n_observations*env.T)/env.dt)-2
-                    estimate = sim.data[net.probe_memory][tidx][0]
+                    estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
                     df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
                     dfs.append(df)
             elif dataset=='carrabin':
                 tidx = int((stage*env.T)/env.dt)-2
-                estimate = sim.data[net.probe_memory][tidx][0]
+                estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
                 df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
                 dfs.append(df)
     data = pd.concat(dfs, ignore_index=True)

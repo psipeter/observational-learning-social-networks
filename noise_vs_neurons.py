@@ -7,7 +7,7 @@ import time
 import sys
 import pandas as pd
 from NEF_RL import simulate_RL, EnvironmentRL
-from NEF_WM2 import simulate_WM, EnvironmentWM
+from NEF_WM import simulate_WM, EnvironmentWM
 
 
 model_type = sys.argv[1]
@@ -27,11 +27,11 @@ for trial in trials:
     print(f"sid {sid}, trial {trial}")
     seed_net = sid + 1000*trial
     if model_type=="NEF_RL":
-        env = EnvironmentRL(dataset="carrabin", sid=sid, trial=trial)
-        net, sim = simulate_RL(env=env, alpha=alpha, n_learning=n_other, n_error=n_error, seed_net=seed_net, progress_bar=False)
+        env = EnvironmentRL(dataset="carrabin", sid=sid, trial=trial, alpha=alpha)
+        net, sim = simulate_RL(env=env, n_learning=n_other, n_error=n_error, seed_net=seed_net, progress_bar=False)
     if model_type=="NEF_WM":
-        env = EnvironmentWM(dataset="carrabin", sid=sid, trial=trial)
-        net, sim = simulate_WM(env=env, alpha=alpha, n_memory=n_other, n_error=n_error, seed_net=seed_net, progress_bar=False)
+        env = EnvironmentWM(dataset="carrabin", sid=sid, trial=trial, alpha=alpha)
+        net, sim = simulate_WM(env=env, n_memory=n_other, n_error=n_error, seed_net=seed_net, progress_bar=False)
     for stage in env.stages:
         tidx = int((stage*env.T)/env.dt)-2
         response = np.mean(sim.data[net.probe_value][tidx-100: tidx])
