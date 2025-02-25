@@ -23,7 +23,7 @@ def NEF_carrabin_loss(trial, model_type, sid):
         data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory)
         # n_error = trial.suggest_int("n_error", 20, 400, step=20)
         # data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory, n_error=n_error)
-    loss = qid_abs_loss([], model_type, sid)
+    loss = QID_loss([], model_type, sid)
     return loss
 
 def NEF_jiang_loss(trial, model_type, sid):
@@ -215,7 +215,7 @@ def get_expectations_jiang(model_type, params, sid, trial, stage):
                 weight = 1 if stg==0 else params[0] + z*RD
             if model_type == 'RL_zl':
                 z = params[0]
-                weight = 1 if stg==0 else params[0] * np.power(c+1, -params[1])  + z*RD
+                weight = 1 if stg==0 else params[0] * np.power(c+1, -params[1]) + z*RD
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
             expectation = np.clip(expectation, -1, 1)
@@ -411,7 +411,7 @@ def fit_carrabin(model_type, sid, method, optuna_trials=100):
     #     result = scipy.optimize.minimize(
     #         # fun=RMSE,
     #         # fun=kde_loss,
-    #         fun=qid_abs_loss,
+    #         fun=QID_loss,
     #         x0=param0,
     #         args=(model_type, sid),
     #         bounds=bounds,
@@ -450,7 +450,7 @@ def fit_jiang(model_type, sid, method, optuna_trials=100):
     #     result = scipy.optimize.minimize(
     #         # fun=RMSE,
     #         # fun=kde_loss,
-    #         fun=qid_abs_loss,
+    #         fun=QID_loss,
     #         x0=param0,
     #         args=(model_type, sid),
     #         bounds=bounds,
