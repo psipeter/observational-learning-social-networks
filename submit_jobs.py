@@ -18,4 +18,4 @@ for sid in sids:
 		submit_string = ["sbatch", f"fit_{sid}.sh"]
 	# a = subprocess.run(delete_string)
 	b = subprocess.run(submit_string)
-	time.sleep(10)  # wait a few seconds before next submission to help out SLURM system
+	time.sleep(1)  # wait a few seconds before next submission to help out SLURM system

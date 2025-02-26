@@ -25,11 +25,14 @@ for sid in sids:
       rsh.write('''#SBATCH --nodes=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
-      rsh.write("\n")
-      rsh.write('''#SBATCH --time=4:0:0''')
       if model_type in ['NEF_WM', 'NEF_RL']:
          rsh.write("\n")
-         rsh.write(optimize_string)      
+         rsh.write('''#SBATCH --time=24:0:0''')
+         rsh.write("\n")
+         rsh.write(optimize_string)
+      else:
+         rsh.write("\n")
+         rsh.write('''#SBATCH --time=4:0:0''')
       rsh.write("\n")
       rsh.write(fit_string)
       rsh.write("\n")
