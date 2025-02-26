@@ -13,17 +13,22 @@ from scipy.stats import gaussian_kde
 def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        n_error = trial.suggest_int("n_error", 10, 400, step=10)
-        data = run_RL("carrabin", sid, alpha, z=0, n_error=n_error)
+        n_all = trial.suggest_int("n_all", 10, 400, step=10)
+        data = run_RL("carrabin", sid, alpha, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+        # n_error = trial.suggest_int("n_error", 10, 400, step=10)
+        # data = run_RL("carrabin", sid, alpha, z=0, n_error=n_error)
         # n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
         # data = run_RL("carrabin", sid, alpha, z=0, n_learning=n_learning, n_error=n_error)
     if model_type=='NEF_WM':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        n_memory = trial.suggest_int("n_memory", 10, 400, step=10)
-        data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory)
+        n_all = trial.suggest_int("n_all", 10, 400, step=10)
+        data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+        # n_memory = trial.suggest_int("n_memory", 10, 400, step=10)
+        # data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory)
         # n_error = trial.suggest_int("n_error", 20, 400, step=20)
         # data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory, n_error=n_error)
-    loss = QID_loss([], model_type, sid)
+    # loss = QID_loss([], model_type, sid)
+    loss = QID_alpha_loss([], model_type, sid)
     return loss
 
 def NEF_jiang_loss(trial, model_type, sid):
@@ -429,7 +434,7 @@ def NLL_loss(params, model_type, sid):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, method, optuna_trials=100):
+def fit_carrabin(model_type, sid, method, optuna_trials=1):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM']:

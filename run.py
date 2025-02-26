@@ -19,25 +19,34 @@ start = time.time()
 if dataset=='carrabin':
 	if model_type=='NEF_WM':
 		alpha = params['alpha'].unique()[0]
-		n_memory = params['n_memory'].unique()[0]
-		data = run_WM(dataset, sid, alpha=alpha, z=0, n_memory=n_memory)
-		param_list = [model_type, sid, alpha, n_memory]
-		param_names = ['type', 'sid', 'alpha', 'n_memory']
+		n_all = params['n_all'].unique()[0]
+		data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, n_all]
+		param_names = ['type', 'sid', 'alpha', 'n_all']
+		# n_memory = params['n_memory'].unique()[0]
+		# data = run_WM(dataset, sid, alpha=alpha, z=0, n_memory=n_memory)
+		# param_list = [model_type, sid, alpha, n_memory]
+		# param_names = ['type', 'sid', 'alpha', 'n_memory']
 		# n_error = params['n_error'].unique()[0]
 		# data = run_WM(dataset, sid, alpha=alpha, z=0, n_memory=n_memory, n_error=n_error)
 		# param_list = [model_type, sid, alpha, n_memory, n_error]
 		# param_names = ['type', 'sid', 'alpha', 'n_memory', 'n_error']
 	if model_type=='NEF_RL':
 		alpha = params['alpha'].unique()[0]
-		n_error = params['n_error'].unique()[0]
-		data = run_RL(dataset, sid, alpha=alpha, z=0, n_error=n_error)
-		param_list = [model_type, sid, alpha, n_error]
-		param_names = ['type', 'sid', 'alpha', 'n_error']
+		n_all = params['n_all'].unique()[0]
+		data = run_RL("carrabin", sid, alpha, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, n_all]
+		param_names = ['type', 'sid', 'alpha', 'n_all']
+		# n_error = params['n_error'].unique()[0]
+		# data = run_RL(dataset, sid, alpha=alpha, z=0, n_error=n_error)
+		# param_list = [model_type, sid, alpha, n_error]
+		# param_names = ['type', 'sid', 'alpha', 'n_error']
 		# n_learning = params['n_learning'].unique()[0]
 		# data = run_RL(dataset, sid, alpha=alpha, z=0, n_learning=n_learning, n_error=n_error)
 		# param_list = [model_type, sid, alpha, n_learning, n_error]
 		# param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error']
-	loss = QID_loss([], model_type, sid)
+	# loss = QID_loss([], model_type, sid)
+	loss = QID_alpha_loss([], model_type, sid)
 	performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
