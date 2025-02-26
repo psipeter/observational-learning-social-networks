@@ -46,21 +46,22 @@ def NEF_jiang_loss(trial, model_type, sid):
 
 def math_carrabin_loss(trial, model_type, sid):
     if model_type=='RL_n':
-        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        sigma = trial.suggest_float("sigma", 0.01, 1.0, step=0.01)
+        alpha = trial.suggest_float("alpha", 0.001, 1.0, step=0.001)
+        sigma = trial.suggest_float("sigma", 0.001, 1.0, step=0.001)
         params = [alpha, sigma]
     if model_type=='B_n':
-        sigma = trial.suggest_float("sigma", 0.01, 1.0, step=0.01)
+        sigma = trial.suggest_float("sigma", 0.001, 1.0, step=0.001)
         params = [sigma]
     if model_type=='DG_n':
-        sigma = trial.suggest_float("sigma", 0.01, 1.0, step=0.01)
+        sigma = trial.suggest_float("sigma", 0.001, 1.0, step=0.001)
         params = [sigma]
     if model_type=='RL_nl':
-        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        sigma = trial.suggest_float("sigma", 0.01, 1.0, step=0.01)
-        lambd = trial.suggest_float("lambda", 0.0, 2.0, step=0.01)
+        alpha = trial.suggest_float("alpha", 0.001, 1.0, step=0.001)
+        sigma = trial.suggest_float("sigma", 0.001, 1.0, step=0.001)
+        lambd = trial.suggest_float("lambda", 0.001, 3.0, step=0.001)
         params = [alpha, sigma, lambd]
-    loss = QID_loss(params, model_type, sid)
+    # loss = QID_loss(params, model_type, sid)
+    loss = QID_alpha_loss(params, model_type, sid)
     return loss
 
 def math_jiang_loss(trial, model_type, sid):
@@ -348,6 +349,43 @@ def QID_loss(params, model_type, sid):  # Carrabin loss function based on distri
         responses_human = response_data.query("qid==@qid & type=='human'")['response'].to_numpy()
         total_loss += W * np.abs(np.mean(responses_model) - np.mean(responses_human))
         total_loss += W * np.abs(np.std(responses_model) - np.std(responses_human))
+    print(params, total_loss)
+    return total_loss
+
+
+# Carrabin loss function based on distribution of learning rates going from
+# the previous stage to the current stage, but aggregated over
+# each input sequence
+def QID_alpha_loss(params, model_type, sid):
+    human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    dfs = []
+    columns = ['type', 'qid', 'delta']
+    for trial in trials:
+        for stage in stages:
+            if stage>1:
+                stage_old = stage - 1
+                qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
+                response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
+                response_human_old = human.query("trial==@trial and stage==@stage_old")['response'].unique()[0]
+                delta_human  = response_human - response_human_old
+                dfs.append(pd.DataFrame([["human", qid, delta_human]], columns=columns))
+                response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=100*sid+1000*trial))
+                response_model_old = get_expectations_carrabin(model_type, params, sid, trial, stage_old, rng=np.random.RandomState(seed=100*sid+1000*trial))
+                delta_model  = response_model - response_model_old
+                dfs.append(pd.DataFrame([[model_type, qid, delta_model]], columns=columns))
+    delta_data = pd.concat(dfs, ignore_index=True)
+    total_loss = 0
+    for qid in delta_data['qid'].unique():
+        n_total = delta_data.query("type=='human'")['qid'].size
+        n_qid = delta_data.query("type=='human' & qid==@qid")['qid'].size
+        # W = 1
+        W = n_qid / n_total
+        deltas_model = delta_data.query("qid==@qid & type==@model_type")['delta'].to_numpy()
+        deltas_human = delta_data.query("qid==@qid & type=='human'")['delta'].to_numpy()
+        total_loss += W * np.abs(np.mean(deltas_model) - np.mean(deltas_human))
+        total_loss += 0.2 * W * np.abs(np.std(deltas_model) - np.std(deltas_human))
     print(params, total_loss)
     return total_loss
 
