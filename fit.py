@@ -368,18 +368,19 @@ def QID_alpha_loss(params, model_type, sid):
     dfs = []
     columns = ['type', 'qid', 'delta']
     for trial in trials:
+        response_human_old = None
+        response_model_old = None
         for stage in stages:
+            qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
+            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
+            response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=100*sid+1000*trial))
             if stage>1:
-                stage_old = stage - 1
-                qid = human.query("trial==@trial and stage==@stage")['qid'].unique()[0]
-                response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]
-                response_human_old = human.query("trial==@trial and stage==@stage_old")['response'].unique()[0]
                 delta_human  = response_human - response_human_old
-                dfs.append(pd.DataFrame([["human", qid, delta_human]], columns=columns))
-                response_model = get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=100*sid+1000*trial))
-                response_model_old = get_expectations_carrabin(model_type, params, sid, trial, stage_old, rng=np.random.RandomState(seed=100*sid+1000*trial))
                 delta_model  = response_model - response_model_old
+                dfs.append(pd.DataFrame([["human", qid, delta_human]], columns=columns))
                 dfs.append(pd.DataFrame([[model_type, qid, delta_model]], columns=columns))
+            response_human_old = response_human
+            response_model_old = response_model
     delta_data = pd.concat(dfs, ignore_index=True)
     total_loss = 0
     for qid in delta_data['qid'].unique():
