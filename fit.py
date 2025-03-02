@@ -14,7 +14,8 @@ def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_all = trial.suggest_int("n_all", 10, 400, step=10)
-        data = run_RL("carrabin", sid, alpha, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+        data = run_RL("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
         # n_error = trial.suggest_int("n_error", 10, 400, step=10)
         # data = run_RL("carrabin", sid, alpha, z=0, n_error=n_error)
         # n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
@@ -22,7 +23,8 @@ def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_WM':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_all = trial.suggest_int("n_all", 10, 400, step=10)
-        data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+        data = run_WM("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
         # n_memory = trial.suggest_int("n_memory", 10, 400, step=10)
         # data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_memory)
         # n_error = trial.suggest_int("n_error", 20, 400, step=20)

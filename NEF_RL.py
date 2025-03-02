@@ -5,8 +5,9 @@ import nengo
 import pandas as pd
 
 class EnvironmentRL():
-    def __init__(self, dataset, sid, trial, alpha=0.2, z=0, T=1, dt=0.001, dim_context=5, seed_env=0):
+    def __init__(self, dataset, sid, trial, alpha=0.2, z=0, lambd=0, T=1, dt=0.001, dim_context=5, seed_env=0):
         self.alpha = alpha
+        self.lambd = lambd
         self.z = z
         self.T = T
         self.dt = dt
@@ -51,8 +52,9 @@ class EnvironmentRL():
         if self.dataset=='carrabin':
             for stage in self.stages:
                 color = self.empirical.query("stage==@stage")['color'].unique()[0]
+                weight = self.alpha * np.power(stage, -self.lambd)
                 self.colors.extend(color * np.ones((tt, 1)))
-                self.weights.extend(self.alpha * np.ones((tt, 1)))
+                self.weights.extend(weight * np.ones((tt, 1)))
         self.colors = np.array(self.colors).flatten()
         self.weights = np.array(self.weights).flatten()
                     
@@ -106,14 +108,14 @@ def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_sim=0, see
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_RL(dataset, sid, alpha, z, n_neurons=100, n_learning=100, n_error=100, save=True):
+def run_RL(dataset, sid, alpha, z, lambd, n_neurons=100, n_learning=100, n_error=100, save=True):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
     dfs = []
     for trial in trials:
         print(f"sid {sid}, trial {trial}")
-        env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z)
+        env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z, lambd=lambd)
         seed_net = sid + 1000*trial
         net, sim = simulate_RL(env=env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, progress_bar=False)
         n_observations = 0
