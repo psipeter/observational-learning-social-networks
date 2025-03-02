@@ -479,8 +479,7 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
     #     params.insert(0, model_type)
 
     # Save Results and Best Fit Parameters
-    # performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
-    performance_data = pd.DataFrame([[model_type, sid, error]], columns=['type', 'sid', 'loss'])
+    performance_data = pd.DataFrame([[model_type, sid, loss, error]], columns=['type', 'sid', 'loss', 'error'])
     performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
     fitted_params = pd.DataFrame([params], columns=param_names)
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
