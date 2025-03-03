@@ -453,12 +453,14 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
             params.append(value)
         if model_type == 'NEF_RL':
             alpha = best_params['alpha']
+            lambd = best_params['lambda']
             n_all = best_params['n_all']
-            data = run_RL("carrabin", sid, alpha, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+            data = run_RL("carrabin", sid, alpha=alpha, lambd=lambd, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
         if model_type == 'NEF_WM':
             alpha = best_params['alpha']
+            lambd = best_params['lambda']
             n_all = best_params['n_all']
-            data = run_WM("carrabin", sid, alpha, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+            data = run_WM("carrabin", sid, alpha=alpha, lambd=lambd, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
         error = abs_error(params[2:], model_type, sid)
         print(f"{len(study.trials)} trials completed. Best value is {loss:.4} with error {error:.4}:")
     # elif method=='scipy':
