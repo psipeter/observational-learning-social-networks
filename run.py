@@ -20,7 +20,7 @@ if dataset=='carrabin':
 	if model_type=='NEF_WM':
 		alpha = params['alpha'].unique()[0]
 		n_all = params['n_all'].unique()[0]
-		lambd = params['lambd'].unique()[0]
+		lambd = params['lambda'].unique()[0]
 		data = run_WM("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
 		param_list = [model_type, sid, alpha, n_all, lambd]
 		param_names = ['type', 'sid', 'alpha', 'n_all', 'lambda']
@@ -35,7 +35,7 @@ if dataset=='carrabin':
 	if model_type=='NEF_RL':
 		alpha = params['alpha'].unique()[0]
 		n_all = params['n_all'].unique()[0]
-		lambd = params['lambd'].unique()[0]
+		lambd = params['lambda'].unique()[0]
 		data = run_RL("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
 		param_list = [model_type, sid, alpha, n_all, lambd]
 		param_names = ['type', 'sid', 'alpha', 'n_all', 'lambda']
