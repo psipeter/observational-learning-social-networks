@@ -57,32 +57,25 @@ if dataset=='carrabin':
 if dataset=='jiang':
 	if model_type=='NEF_WM':
 		alpha = params['alpha'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		n_all = params['n_all'].unique()[0]
 		z = params['z'].unique()[0]
-		inv_temp = params['inv_temp'].unique()[0]
-		data = run_WM(dataset, sid, alpha=alpha, z=z)
-		param_list = [model_type, sid, alpha, z, inv_temp]
-		param_names = ['type', 'sid', 'alpha', 'z', 'inv_temp']
-		# n_memory = params['n_memory'].unique()[0]
-		# n_error = params['n_error'].unique()[0]
-		# data = run_WM(dataset, sid, alpha=alpha, z=z, n_memory=n_memory, n_error=n_error)
-		# param_list = [model_type, sid, alpha, n_memory, n_error, z, inv_temp]
-		# param_names = ['type', 'sid', 'alpha', 'n_memory', 'n_error', 'z', 'inv_temp']
+		beta = params['beta'].unique()[0]
+		data = run_WM("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, z, n_all, lambd, beta]
+		param_names = ['type', 'sid', 'alpha', 'z', 'n_all', 'lambda', 'beta']
 	if model_type=='NEF_RL':
 		alpha = params['alpha'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		n_all = params['n_all'].unique()[0]
 		z = params['z'].unique()[0]
-		inv_temp = params['inv_temp'].unique()[0]
-		data = run_RL(dataset, sid, alpha=alpha, z=z)
-		param_list = [model_type, sid, alpha, z, inv_temp]
-		param_names = ['type', 'sid', 'alpha', 'z', 'inv_temp']
-		# n_learning = params['n_learning'].unique()[0]
-		# n_error = params['n_error'].unique()[0]
-		# data = run_RL(dataset, sid, alpha=alpha, z=z, n_learning=n_learning, n_error=n_error)
-		# param_list = [model_type, sid, alpha, n_learning, n_error, z, inv_temp]
-		# param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error', 'z', 'inv_temp']
-	NLL = likelihood([inv_temp], model_type, sid)
-	mcfadden_r2 = compute_mcfadden(NLL, sid)
-	columns = ['type', 'sid', 'NLL', 'McFadden R2']
-	performance_data = pd.DataFrame([[model_type, sid, NLL, mcfadden_r2]],columns=columns)
+		beta = params['beta'].unique()[0]
+		data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, z, n_all, lambd, beta]
+		param_names = ['type', 'sid', 'alpha', 'z', 'n_all', 'lambda', 'beta']
+	NLL = NLL_loss([beta], model_type, sid)
+	columns = ['type', 'sid', 'NLL']
+	performance_data = pd.DataFrame([[model_type, sid, NLL]],columns=columns)
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")

@@ -35,20 +35,20 @@ def NEF_carrabin_loss(trial, model_type, sid):
 
 def NEF_jiang_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
+        n_all = trial.suggest_int("n_all", 20, 400, step=20)
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        # n_learning = trial.suggest_int("n_learning", 20, 400, step=20)
-        n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
-        inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
-        data = run_RL("jiang", sid, alpha, z=z, n_error=n_error)
+        beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
+        data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
     if model_type=='NEF_WM':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        n_memory = trial.suggest_int("n_memory", 20, 400, step=20)
-        # n_error = trial.suggest_int("n_error", 20, 400, step=20)
+        n_all = trial.suggest_int("n_all", 20, 400, step=20)
+        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
-        inv_temp = trial.suggest_float("inv_temp", 0.01, 10, step=0.01)
-        data = run_WM("jiang", sid, alpha, z=z, n_memory=n_memory)
-    NLL = likelihood([inv_temp], model_type, sid)
+        beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
+        data = run_WM("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+    NLL = NLL_loss([beta], model_type, sid)
     return NLL
 
 def math_carrabin_loss(trial, model_type, sid):
@@ -428,12 +428,12 @@ def NLL_loss(params, model_type, sid):
     human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     trials = human['trial'].unique()
     stages = human['stage'].unique()
-    inv_temp = params[-1]
+    beta = params[-1]
     for trial in trials:
         for stage in stages:
             expectation = get_expectations_jiang(model_type, params, sid, trial, stage)
             act = human.query("trial==@trial and stage==@stage")['action'].unique()[0]
-            prob = scipy.special.expit(inv_temp*expectation)
+            prob = scipy.special.expit(beta*expectation)
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
@@ -487,7 +487,7 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid, method, optuna_trials=100):
+def fit_jiang(model_type, sid, method, optuna_trials=1):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM']:

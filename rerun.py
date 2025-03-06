@@ -29,15 +29,13 @@ def rerun_jiang(model_type, sid, seed=0):
 	stages = human['stage'].unique()
 	rng = np.random.RandomState(seed=seed)
 	params = pd.read_pickle(f"data/{model_type}_jiang_{sid}_params.pkl").loc[0].to_numpy()[2:]
-	dfs = []
-	columns = ['type', 'sid', 'trial', 'stage', 'qid', 'response']
-	inv_temp = params[-1]
+	beta = params[-1]
 	dfs = []
 	columns = ['type', 'sid', 'trial', 'network', 'stage', 'who', 'color', 'degree', 'RD', 'action']
 	for trial in trials:
 		for stage in stages:
-			expectation = get_expectations_jiang(model_type, params, trial, stage, sid)
-			prob = scipy.special.expit(inv_temp*expectation)
+			expectation = get_expectations_jiang(model_type, params, sid, trial, stage)
+			prob = scipy.special.expit(beta*expectation)
 			action = 1 if rng.uniform(0,1) < prob else -1
 			subdata = human.query("trial==@trial & stage==@stage")
 			observations = subdata['color'].to_numpy()
