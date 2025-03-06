@@ -47,9 +47,9 @@ if dataset=='carrabin':
 		# data = run_RL(dataset, sid, alpha=alpha, z=0, n_learning=n_learning, n_error=n_error)
 		# param_list = [model_type, sid, alpha, n_learning, n_error]
 		# param_names = ['type', 'sid', 'alpha', 'n_learning', 'n_error']
-	# loss = QID_loss([], model_type, sid)
-	loss = QID_alpha_loss([], model_type, sid)
-	performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
+	loss = QID_loss([], model_type, sid)
+    error = abs_error([], model_type, sid)
+    performance_data = pd.DataFrame([[model_type, sid, loss, error]], columns=['type', 'sid', 'loss', 'error'])
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
