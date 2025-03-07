@@ -25,7 +25,7 @@ for sid in sids:
       rsh.write('''#SBATCH --nodes=1''')
       rsh.write("\n")
       rsh.write('''#SBATCH --ntasks-per-node=1''')
-      if model_type in ['NEF_WM', 'NEF_RL']:
+      if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn', 'NEF_rec']:
          rsh.write("\n")
          rsh.write('''#SBATCH --time=24:0:0''')
          rsh.write("\n")
