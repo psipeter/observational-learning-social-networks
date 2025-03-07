@@ -10,7 +10,7 @@ sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 # c = subprocess.run("rm *.out", shell=True)
 
 for sid in sids:
-	if model_type in ['NEF_WM', 'NEF_RL']:
+	if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn', 'NEF_rec']:
 		delete_string = f"rm data/{model_type}_{dataset}_{sid}.pkl"
 		submit_string = ["sbatch", f"nef_{sid}.sh"]
 	else:
