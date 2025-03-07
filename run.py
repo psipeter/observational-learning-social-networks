@@ -39,6 +39,13 @@ if dataset=='carrabin':
 		data = run_NEF_syn("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
 		param_list = [model_type, sid, alpha, n_neurons, lambd]
 		param_names = ['type', 'sid', 'alpha', 'n_neurons', 'lambda']
+	if model_type=='NEF_rec':
+		alpha = params['alpha'].unique()[0]
+		n_neurons = params['n_neurons'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		data = run_NEF_rec("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+		param_list = [model_type, sid, alpha, n_neurons, lambd]
+		param_names = ['type', 'sid', 'alpha', 'n_neurons', 'lambda']
 	loss = QID_loss([], model_type, sid)
 	error = mean_loss([], model_type, sid)
 	performance_data = pd.DataFrame([[model_type, sid, loss, error]], columns=['type', 'sid', 'loss', 'error'])

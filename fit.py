@@ -9,6 +9,7 @@ import optuna
 from NEF_RL import run_RL
 from NEF_WM import run_WM
 from NEF_syn import run_NEF_syn
+from NEF_rec import run_NEF_rec
 from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
@@ -27,6 +28,11 @@ def NEF_carrabin_loss(trial, model_type, sid):
         n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
         lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         data = run_NEF_syn("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+    if model_type=='NEF_rec':
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
+        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+        data = run_NEF_rec("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
     loss = QID_loss([], model_type, sid)
     return loss
 
@@ -88,7 +94,7 @@ def math_jiang_loss(trial, model_type, sid):
 
 def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=0)):
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
-    if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn']:
+    if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn', 'NEF_rec']:
         nef_data = pd.read_pickle(f"data/{model_type}_carrabin_{sid}_estimates.pkl")
         expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].unique()[0]
     else:
@@ -198,7 +204,7 @@ def NLL_loss(params, model_type, sid):
 def fit_carrabin(model_type, sid, method, optuna_trials=2):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
-        if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn']:
+        if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
             study.optimize(lambda trial: NEF_carrabin_loss(trial, model_type, sid), n_trials=optuna_trials)
         else:
             study.optimize(lambda trial: math_carrabin_loss(trial, model_type, sid), n_trials=optuna_trials)
