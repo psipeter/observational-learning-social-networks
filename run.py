@@ -73,7 +73,7 @@ if dataset=='jiang':
 		param_list = [model_type, sid, alpha, z, n_all, lambd, beta]
 		param_names = ['type', 'sid', 'alpha', 'z', 'n_all', 'lambda', 'beta']
 	NLL = NLL_loss([beta], model_type, sid)
-	columns = ['type', 'sid', 'NLL']
+	columns = ['type', 'sid', 'loss']
 	performance_data = pd.DataFrame([[model_type, sid, NLL]],columns=columns)
 	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
