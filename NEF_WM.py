@@ -35,15 +35,17 @@ class EnvironmentWM():
                     self.weights.extend(weight * np.ones((3*tt, 1)))
                 if stage==1:
                     for n in range(self.n_neighbors):
+                        samples = 2+n
                         color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
-                        weight = self.alpha
+                        weight = self.alpha * np.power(samples, -self.lambd)
                         self.colors.extend(color * np.ones((tt, 1)))
                         self.weights.extend(weight * np.ones((tt, 1)))
                 if stage>1:
                     for n in range(self.n_neighbors):
+                        samples = 2+(stage-1)*self.n_neighbors + n
                         RD = self.empirical.query("stage==@stage")['RD'].to_numpy()[n]
                         color = self.empirical.query("stage==@stage")['color'].to_numpy()[n]
-                        weight = (self.alpha + self.z*RD) * np.power(stage, -self.lambd)
+                        weight = self.alpha * np.power(samples, -self.lambd) + self.z*RD
                         self.colors.extend(color * np.ones((tt, 1)))
                         self.weights.extend(weight * np.ones((tt, 1)))
         if self.dataset=='carrabin':

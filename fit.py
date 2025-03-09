@@ -38,15 +38,17 @@ def NEF_carrabin_loss(trial, model_type, sid):
 
 def NEF_jiang_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
-        n_all = trial.suggest_int("n_all", 20, 400, step=20)
+        # n_all = trial.suggest_int("n_all", 20, 400, step=20)
+        n_all = trial.suggest_int("n_all", 100, 100, step=20)
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
         data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
     if model_type=='NEF_WM':
+        # n_all = trial.suggest_int("n_all", 20, 400, step=20)
+        n_all = trial.suggest_int("n_all", 200, 200, step=20)
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
-        n_all = trial.suggest_int("n_all", 20, 400, step=20)
         lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
@@ -119,7 +121,7 @@ def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.rand
             expectation = np.clip(expectation, -1, 1)
     return expectation
 
-def get_expectations_jiang(model_type, params, sid, trial, stage):
+def get_expectations_jiang(model_type, params, sid, trial, stage, full=False):
     human = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     if model_type in ['NEF_WM', 'NEF_RL']:
         nef_data = pd.read_pickle(f"data/{model_type}_jiang_{sid}_estimates.pkl")
@@ -129,6 +131,7 @@ def get_expectations_jiang(model_type, params, sid, trial, stage):
         colors = subdata['color'].to_numpy()
         RDs = subdata['RD'].to_numpy()
         expectation = 0
+        expectations = [0]
         for c, color in enumerate(colors):
             stg = int(subdata.iloc[c]['stage'])
             error = color - expectation
@@ -145,7 +148,8 @@ def get_expectations_jiang(model_type, params, sid, trial, stage):
             weight = np.clip(weight, 0, 1)
             expectation += weight * error
             expectation = np.clip(expectation, -1, 1)
-    return expectation
+            expectations.append(expectation)
+    return expectation if not full else expectations
 
 def mean_loss(params, model_type, sid):
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
