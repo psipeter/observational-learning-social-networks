@@ -111,7 +111,7 @@ def simulate_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_sim=0, see
         sim.run(env.Tall, progress_bar=progress_bar)
     return net, sim
 
-def run_RL(dataset, sid, alpha, z, lambd, n_neurons=100, n_learning=100, n_error=100, save=True):
+def run_RL(dataset, sid, alpha, z, lambd, n_neurons=100, n_learning=100, n_error=100):
     empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
     trials = empirical['trial'].unique() 
     columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -121,23 +121,15 @@ def run_RL(dataset, sid, alpha, z, lambd, n_neurons=100, n_learning=100, n_error
         env = EnvironmentRL(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z, lambd=lambd)
         seed_net = sid + 1000*trial
         net, sim = simulate_RL(env=env, n_neurons=n_neurons, n_learning=n_learning, n_error=n_error, seed_net=seed_net, progress_bar=False)
-        n_observations = 0
-        for stage in env.stages:
-            subdata = empirical.query("trial==@trial and stage==@stage")
-            if dataset=='jiang':
-                observations = subdata['color'].to_numpy()
-                for o in range(len(observations)):
-                    n_observations += 1
-                    tidx = int((n_observations*env.T)/env.dt)-2
-                    estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-                    df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
-                    dfs.append(df)
-            elif dataset=='carrabin':
-                tidx = int((stage*env.T)/env.dt)-2
-                estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-                df = pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns)
-                dfs.append(df)
+        if dataset=='jiang':
+            obs_times = np.arange(3, 3+4*env.n_neighbors, env.n_neighbors) * env.T/env.dt
+        elif dataset=='carrabin':
+            obs_times = np.arange(1, 6, 1) * env.T/env.dt
+        obs_times = obs_times.astype(int)
+        for s, tidx in enumerate(obs_times):
+            stage = env.stages[s]
+            estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
+            dfs.append(pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns))
     data = pd.concat(dfs, ignore_index=True)
-    if save:
-        data.to_pickle(f"data/NEF_RL_{dataset}_{sid}_estimates.pkl")
+    data.to_pickle(f"data/NEF_RL_{dataset}_{sid}_estimates.pkl")
     return data

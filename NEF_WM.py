@@ -112,22 +112,15 @@ def run_WM(dataset, sid, alpha, z, lambd, n_neurons=100, n_memory=100, n_error=1
         env = EnvironmentWM(dataset=dataset, sid=sid, trial=trial, alpha=alpha, z=z, lambd=lambd)
         seed_net = sid + 1000*trial
         net, sim = simulate_WM(env=env, n_neurons=n_neurons, n_memory=n_memory, n_error=n_error, seed_net=seed_net, progress_bar=False)
-        n_observations = 0
-        for stage in env.stages:
-            subdata = empirical.query("trial==@trial and stage==@stage")
-            if dataset=='jiang':
-                observations = subdata['color'].to_numpy()
-                for o in range(len(observations)):
-                    n_observations += 1
-                    tidx = int((n_observations*env.T)/env.dt)-2
-                    estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-                    df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
-                    dfs.append(df)
-            elif dataset=='carrabin':
-                tidx = int((stage*env.T)/env.dt)-2
-                estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-                df = pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns)
-                dfs.append(df)
+        if dataset=='jiang':
+            obs_times = np.arange(3, 3+4*env.n_neighbors, env.n_neighbors) * env.T/env.dt
+        elif dataset=='carrabin':
+            obs_times = np.arange(1, 6, 1) * env.T/env.dt
+        obs_times = obs_times.astype(int)
+        for s, tidx in enumerate(obs_times):
+            stage = env.stages[s]
+            estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
+            dfs.append(pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns))
     data = pd.concat(dfs, ignore_index=True)
     if save:
         data.to_pickle(f"data/NEF_WM_{dataset}_{sid}_estimates.pkl")

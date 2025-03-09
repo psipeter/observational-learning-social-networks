@@ -14,12 +14,12 @@ from scipy.stats import gaussian_kde
 
 def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
-        alpha = trial.suggest_float("alpha", 0.01, 2.0, step=0.01)
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_all = trial.suggest_int("n_all", 10, 500, step=10)
         lambd = trial.suggest_float("lambda", 1.0, 1.0, step=0.01)
         data = run_RL("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
     if model_type=='NEF_WM':
-        alpha = trial.suggest_float("alpha", 0.01, 2.0, step=0.01)
+        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_all = trial.suggest_int("n_all", 10, 500, step=10)
         lambd = trial.suggest_float("lambda", 1.0, 1.0, step=0.01)
         data = run_WM("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
@@ -40,15 +40,15 @@ def NEF_jiang_loss(trial, model_type, sid):
     if model_type=='NEF_RL':
         # n_all = trial.suggest_int("n_all", 20, 400, step=20)
         n_all = trial.suggest_int("n_all", 100, 100, step=20)
-        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        alpha = trial.suggest_float("alpha", 0.01, 1.5, step=0.01)
         lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
         data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
     if model_type=='NEF_WM':
         # n_all = trial.suggest_int("n_all", 20, 400, step=20)
-        n_all = trial.suggest_int("n_all", 200, 200, step=20)
-        alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+        n_all = trial.suggest_int("n_all", 100, 100, step=20)
+        alpha = trial.suggest_float("alpha", 0.01, 1.5, step=0.01)
         lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
         z = trial.suggest_float("z", 0.01, 1.0, step=0.01)
         beta = trial.suggest_float("beta", 0.01, 10, step=0.01)
