@@ -20,6 +20,7 @@ if experiment=='noise_vs_neurons':
 
 if experiment=='learning_noise':
 	model_type = sys.argv[2]
+	n_neurons = [int(arg) for arg in sys.argv[3:]]
 	sids = pd.read_pickle("data/jiang.pkl")['sid'].unique()
 	n = 0
 	for sid in sids:
