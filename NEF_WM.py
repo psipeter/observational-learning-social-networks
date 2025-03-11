@@ -120,7 +120,7 @@ def run_WM(dataset, sid, alpha, z, lambd, n_neurons=100, n_memory=100, n_error=1
         for s, tidx in enumerate(obs_times):
             stage = env.stages[s]
             estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-            dfs.append(pd.DataFrame([['NEF_RL', sid, trial, stage, estimate]], columns=columns))
+            dfs.append(pd.DataFrame([['NEF_WM', sid, trial, stage, estimate]], columns=columns))
     data = pd.concat(dfs, ignore_index=True)
     if save:
         data.to_pickle(f"data/NEF_WM_{dataset}_{sid}_estimates.pkl")

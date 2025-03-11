@@ -17,3 +17,14 @@ if experiment=='noise_vs_neurons':
 			submit_string = ["sbatch", f"extra_{n}.sh"]
 			a = subprocess.run(submit_string)
 			time.sleep(1)
+
+if experiment=='learning_noise':
+	model_type = sys.argv[2]
+	sids = pd.read_pickle("data/jiang.pkl")['sid'].unique()
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			n += 1
+			submit_string = ["sbatch", f"extra_{n}.sh"]
+			a = subprocess.run(submit_string)
+			time.sleep(1)

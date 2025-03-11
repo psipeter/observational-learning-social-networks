@@ -5,43 +5,56 @@ import nengo
 import scipy
 import time
 import sys
+from fit import *
 from NEF_RL import *
-
-def variance_LR(sid, trial, alpha, n_neurons, a=6e-5):
-    s = [alpha,alpha,alpha,alpha,alpha]
-    seed_net = sid + 1000*trial
-    columns = ['type', 'n_neurons', 'sid', 'trial', 'stage', 'expectation', 'alpha', 'measured alpha']
-    dfs = []
-    env = Environment(dataset='carrabin', sid=sid, trial=trial, decay='stages', s=s)
-    net, sim = simulate_RL(env=env, n_neurons=n_neurons, seed_net=seed_net, z=0, a=a, progress_bar=False)
-    for stage in env.stages:
-        told = int(((stage-1)*env.T)/env.dt)+2
-        tnew = int((stage*env.T)/env.dt)-2
-        eold = sim.data[net.probe_prediction][told][0]
-        enew = sim.data[net.probe_prediction][tnew][0]
-        delta_E = np.abs(enew - eold)
-        color = env.empirical.query("stage==@stage")['color'].unique()[0]
-        PE = np.abs(color - eold)
-        measured_alpha = delta_E / PE
-        df = pd.DataFrame([['NEF_RL', n_neurons, sid, trial, stage, enew, alpha, measured_alpha]], columns=columns)
-        dfs.append(df)
-    data = pd.concat(dfs, ignore_index=True)
-    return data
+from NEF_WM import *
 
 if __name__ == '__main__':
-	sid = int(sys.argv[1])
-	n_neurons = int(sys.argv[2])
-	empirical = pd.read_pickle(f"data/carrabin.pkl")
-	trials = empirical['trial'].unique()
-	alpha = pd.read_pickle(f"data/RL_carrabin_{sid}_params.pkl")['alpha'].unique()[0]
-
-	start = time.time()
-	dfs = []
-	for trial in trials:
-		print(f"sid {sid}, trial {trial}")
-		dfs.append(variance_LR(sid, trial, alpha=alpha, n_neurons=n_neurons))
-	alpha_data = pd.concat(dfs, ignore_index=True)
-	alpha_data.to_pickle(f"data/NEF_RL_variance_LR_carrabin_{sid}_{n_neurons}.pkl")
-	print(alpha_data)
-	end = time.time()
-	print(f"runtime {(end-start)/60:.4} min")
+    model_type = sys.argv[1]
+    sid = int(sys.argv[2])
+    neurons = int(sys.argv[3])
+    empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
+    trials = empirical['trial'].unique()
+    start = time.time()
+    # if model_type=='NEF_RL':
+        # params = pd.read_pickle("data/NEF_RL_jiang_mar9_performance.pkl")
+        # data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd)
+        # math_data = pd.read_pickle("data/RL_z_jiang_mar7_dynamics.pkl").query("sid==@sid")
+    rng = np.random.RandomState(seed=0)
+    if model_type=='NEF_WM':
+        p_nef = pd.read_pickle("data/NEF_WM_jiang_mar11_params.pkl").query("sid==@sid")
+        alpha = p_nef['alpha'].unique()[0]
+        z = p_nef['z'].unique()[0]
+        lambd = p_nef['lambda'].unique()[0]
+        beta_nef = p_nef['beta'].unique()[0]
+        params_nef = [z]
+        nef_data = run_WM("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons, n_memory=neurons, n_error=neurons)
+        math_type = "DG_z"
+        p_math = pd.read_pickle(f"data/{math_type}_jiang_mar7_params.pkl").query("sid==@sid")
+        z_math = p_math['z'].unique()[0]
+        beta_math = p_math['beta'].unique()[0]
+        params_math = [z_math, beta_math]
+    human = pd.read_pickle("data/jiang.pkl").query("sid==@sid")
+    trials = human.query("sid==@sid")['trial'].unique()
+    columns = ['type', 'neurons', 'sid', 'trial', 'stage', 'is_greedy', 'noise_driven']
+    dfs = []
+    for trial in trials:
+        stages = human.query("sid==@sid & trial==@trial")['stage'].unique()
+        for stage in stages:
+            expectation_math = get_expectations_jiang(math_type, params_math, sid, trial, stage)
+            # expectation_nef = get_expectations_jiang(model_type, params_nef, sid, trial, stage)
+            expectation_nef = nef_data.query("trial==@trial & stage==@stage")['estimate'].unique()[0]
+            prob_math = scipy.special.expit(beta_math*expectation_math)
+            prob_nef = scipy.special.expit(beta_nef*expectation_nef)
+            action_math = 1 if rng.uniform(0,1) < prob_math else -1
+            action_nef = 1 if rng.uniform(0,1) < prob_nef else -1
+            action_human = human.query("trial==@trial & stage==@stage")['action'].unique()[0]
+            sign_math = 1 if expectation_math > 0 else -1
+            sign_nef = 1 if expectation_nef > 0 else -1
+            is_greedy = True if action_human==sign_math else False
+            noise_driven = True if sign_nef!=sign_math else False
+            dfs.append(pd.DataFrame([[model_type, neurons, sid, trial, stage, is_greedy, noise_driven]], columns=columns))
+    noise_data = pd.concat(dfs, ignore_index=True)
+    noise_data.to_pickle(f"data/{model_type}_{sid}_{neurons}_learning_noise.pkl")
+    end = time.time()
+    print(f"runtime {(end-start)/60:.4} min")
