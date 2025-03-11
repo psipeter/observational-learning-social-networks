@@ -27,7 +27,7 @@ if __name__ == '__main__':
         z = p_nef['z'].unique()[0]
         lambd = p_nef['lambda'].unique()[0]
         beta_nef = p_nef['beta'].unique()[0]
-        params_nef = [z]
+        params_nef = [beta_nef]
         nef_data = run_WM("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons, n_memory=neurons, n_error=neurons)
         math_type = "DG_z"
         p_math = pd.read_pickle(f"data/{math_type}_jiang_mar7_params.pkl").query("sid==@sid")

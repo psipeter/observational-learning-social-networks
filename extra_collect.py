@@ -30,4 +30,4 @@ if experiment=='learning_noise':
 			n += 1
 			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_{neurons}_learning_noise.pkl"))
 	noise_data = pd.concat(dfs, ignore_index=True)
-	noise_data.to_pickle(f"data/{model_type}_{sid}_{label}_learning_noise.pkl")
+	noise_data.to_pickle(f"data/{model_type}_{label}_learning_noise.pkl")
