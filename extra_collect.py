@@ -28,6 +28,9 @@ if experiment=='learning_noise':
 	for sid in sids:
 		for neurons in n_neurons:
 			n += 1
-			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_{neurons}_learning_noise.pkl"))
+			try:
+				dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_{neurons}_learning_noise.pkl"))
+			except:
+				print(f"missing sid {sid} neurons {neurons}")
 	noise_data = pd.concat(dfs, ignore_index=True)
 	noise_data.to_pickle(f"data/{model_type}_{label}_learning_noise.pkl")
