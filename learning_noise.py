@@ -15,6 +15,7 @@ if __name__ == '__main__':
     neurons = int(sys.argv[3])
     empirical = pd.read_pickle(f"data/jiang.pkl").query("sid==@sid")
     trials = empirical['trial'].unique()
+    rng = np.random.RandomState(seed=0)
     start = time.time()
     if model_type=='NEF_RL':
         p_nef = pd.read_pickle("data/NEF_RL_jiang_mar11_params.pkl").query("sid==@sid")
@@ -24,13 +25,6 @@ if __name__ == '__main__':
         beta_nef = p_nef['beta'].unique()[0]
         params_nef = [beta_nef]
         nef_data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons, n_learning=neurons, n_error=neurons)
-        math_type = "RL_z"
-        p_math = pd.read_pickle(f"data/{math_type}_jiang_mar7_params.pkl").query("sid==@sid")
-        alpha_math = p_math['alpha'].unique()[0]
-        z_math = p_math['z'].unique()[0]
-        beta_math = p_math['beta'].unique()[0]
-        params_math = [alpha_math, z_math, beta_math]
-    rng = np.random.RandomState(seed=0)
     if model_type=='NEF_WM':
         p_nef = pd.read_pickle("data/NEF_WM_jiang_mar11_params.pkl").query("sid==@sid")
         alpha = p_nef['alpha'].unique()[0]
@@ -39,6 +33,14 @@ if __name__ == '__main__':
         beta_nef = p_nef['beta'].unique()[0]
         params_nef = [beta_nef]
         nef_data = run_WM("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons, n_memory=neurons, n_error=neurons)
+    if lambd==0.0:
+        math_type = "RL_z"
+        p_math = pd.read_pickle(f"data/{math_type}_jiang_mar7_params.pkl").query("sid==@sid")
+        alpha_math = p_math['alpha'].unique()[0]
+        z_math = p_math['z'].unique()[0]
+        beta_math = p_math['beta'].unique()[0]
+        params_math = [alpha_math, z_math, beta_math]
+    elif lambd==1.0:
         math_type = "DG_z"
         p_math = pd.read_pickle(f"data/{math_type}_jiang_mar7_params.pkl").query("sid==@sid")
         z_math = p_math['z'].unique()[0]
