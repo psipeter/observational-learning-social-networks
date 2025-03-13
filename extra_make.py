@@ -78,7 +78,7 @@ if experiment=='counting':
 
 if experiment=='activities':
 	model_type = sys.argv[1]
-	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
+	sids = pd.read_pickle(f"data/jiang.pkl")['sid'].unique()
 	for sid in sids:
 		run_string = f"python activities.py {model_type} {sid}"
 		file_string = f'extra_{sid}.sh'
