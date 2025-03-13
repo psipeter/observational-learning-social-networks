@@ -29,3 +29,16 @@ if experiment=='learning_noise':
 			submit_string = ["sbatch", f"extra_{n}.sh"]
 			a = subprocess.run(submit_string)
 			time.sleep(1)
+
+if experiment=='counting':
+	dataset = sys.argv[2]
+	n_sid = int(sys.argv[3])
+	n_neurons = [int(arg) for arg in sys.argv[4:]]
+	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()[:n_sid]
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			n += 1
+			submit_string = ["sbatch", f"extra_{n}.sh"]
+			a = subprocess.run(submit_string)
+			time.sleep(1)

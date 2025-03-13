@@ -51,3 +51,27 @@ if experiment=='learning_noise':
 				rsh.write('''#SBATCH --time=1:00:0''')
 				rsh.write("\n")
 				rsh.write(run_string)
+
+if experiment=='counting':
+	dataset = sys.argv[2]
+	n_sid = int(sys.argv[3])
+	n_neurons = [int(arg) for arg in sys.argv[4:]]
+	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()[:n_sid]
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			n += 1
+			run_string = f"python counting.py {dataset} {sid} {neurons}"
+			file_string = f'extra_{n}.sh'
+			with open (file_string, 'w') as rsh:
+				rsh.write('''#!/bin/bash''')
+				rsh.write("\n")
+				rsh.write('''#SBATCH --mem=4G''')
+				rsh.write("\n")
+				rsh.write('''#SBATCH --nodes=1''')
+				rsh.write("\n")
+				rsh.write('''#SBATCH --ntasks-per-node=1''')
+				rsh.write("\n")
+				rsh.write('''#SBATCH --time=1:00:0''')
+				rsh.write("\n")
+				rsh.write(run_string)

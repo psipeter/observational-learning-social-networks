@@ -34,3 +34,21 @@ if experiment=='learning_noise':
 				print(f"missing sid {sid} neurons {neurons}")
 	noise_data = pd.concat(dfs, ignore_index=True)
 	noise_data.to_pickle(f"data/{model_type}_{label}_learning_noise.pkl")
+
+if experiment=='counting':
+	dataset = sys.argv[2]
+	n_sid = int(sys.argv[3])
+	n_neurons = [int(arg) for arg in sys.argv[4:-1]]
+	label = sys.argv[-1]
+	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()[:n_sid]
+	dfs = []
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			n += 1
+			try:
+				dfs.append(pd.read_pickle(f"data/{dataset}_{sid}_{neurons}_counting.pkl"))
+			except:
+				print(f"missing sid {sid} neurons {neurons}")
+	noise_data = pd.concat(dfs, ignore_index=True)
+	noise_data.to_pickle(f"data/{dataset}_{label}_counting.pkl")
