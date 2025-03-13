@@ -52,6 +52,7 @@ class Environment():
 		return [self.colors[tidx]]
 
 def run(learned_weights, env, n_neurons=1000, seed_net=0, syn_fb=0.2, a=1e-4, train=False, plot=True):
+	nengo.rc.set("decoder_cache", "enabled", "False")
 	func_stim = lambda t: env.sample(t)
 	func_stop = lambda t: 1 - np.abs(env.sample(t))
 	func_project = lambda x: [np.sin(np.pi*x), np.cos(np.pi*x)]
