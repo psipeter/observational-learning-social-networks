@@ -53,7 +53,7 @@ if experiment=='counting':
 	noise_data = pd.concat(dfs, ignore_index=True)
 	noise_data.to_pickle(f"data/{dataset}_{label}_counting.pkl")
 
-if experiment=='counting':
+if experiment=='activities':
 	model_type = sys.argv[1]
 	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 	label = sys.argv[-1]

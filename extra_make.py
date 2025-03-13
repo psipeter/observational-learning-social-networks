@@ -76,7 +76,7 @@ if experiment=='counting':
 				rsh.write("\n")
 				rsh.write(run_string)
 
-if experiment=='counting':
+if experiment=='activities':
 	model_type = sys.argv[1]
 	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 	for sid in sids:
