@@ -34,14 +34,13 @@ if __name__ == '__main__':
 		if model_type=='NEF_RL':
 			env = EnvironmentRL(dataset="jiang", sid=sid, trial=trial, alpha=alpha, z=z, lambd=lambd)
 			net = build_network_RL(env, seed_net=seed_net)
-			obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt
 		if model_type=='NEF_WM':
 			env = EnvironmentWM(dataset="jiang", sid=sid, trial=trial, alpha=alpha, z=z, lambd=lambd)
 			net = build_network_WM(env, seed_net=seed_net)
-			obs_times = np.arange(1, 6, 1) * env.T/env.dt
 		sim = nengo.Simulator(net, seed=sid, progress_bar=False)
 		with sim:
 			sim.run(env.Tall, progress_bar=False)
+		obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt
 		obs_times = obs_times.astype(int)
 		for s, tidx in enumerate(obs_times):
 			obs = np.mean(sim.data[net.probe_input_obs][tidx-100: tidx])
