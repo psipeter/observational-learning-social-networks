@@ -75,3 +75,22 @@ if experiment=='counting':
 				rsh.write('''#SBATCH --time=1:00:0''')
 				rsh.write("\n")
 				rsh.write(run_string)
+
+if experiment=='counting':
+	model_type = sys.argv[1]
+	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
+	for sid in sids:
+		run_string = f"python activities.py {model_type} {sid}"
+		file_string = f'extra_{sid}.sh'
+		with open (file_string, 'w') as rsh:
+			rsh.write('''#!/bin/bash''')
+			rsh.write("\n")
+			rsh.write('''#SBATCH --mem=4G''')
+			rsh.write("\n")
+			rsh.write('''#SBATCH --nodes=1''')
+			rsh.write("\n")
+			rsh.write('''#SBATCH --ntasks-per-node=1''')
+			rsh.write("\n")
+			rsh.write('''#SBATCH --time=1:00:0''')
+			rsh.write("\n")
+			rsh.write(run_string)
