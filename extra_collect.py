@@ -62,6 +62,6 @@ if experiment=='activities':
 		try:
 			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl"))
 		except:
-			print(f"missing sid {sid} neurons {neurons}")
+			print(f"missing sid {sid}")
 	activity_data = pd.concat(dfs, ignore_index=True)
 	activity_data.to_pickle(f"data/{model_type}_{label}_activities.pkl")
