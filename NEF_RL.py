@@ -98,11 +98,15 @@ def build_network_RL(env, n_neurons=100, n_learning=100, n_error=100, seed_net=0
         net.probe_input_weight = nengo.Probe(input_weight, synapse=0)
         net.probe_obs = nengo.Probe(obs, synapse=syn)
         net.probe_weight = nengo.Probe(weight, synapse=syn)
+        net.probe_context = nengo.Probe(context, synapse=syn)
         net.probe_value = nengo.Probe(value, synapse=syn)
         net.probe_error = nengo.Probe(error.output, synapse=syn)
-        net.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=syn)
-        net.probe_error1_spikes = nengo.Probe(error.sq1.ea_ensembles[0].neurons, synapse=syn)
-        net.probe_error2_spikes = nengo.Probe(error.sq2.ea_ensembles[0].neurons, synapse=syn)
+        net.probe_obs_spikes = nengo.Probe(obs.neurons, synapse=None)
+        net.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=None)
+        net.probe_context_spikes = nengo.Probe(context.neurons, synapse=None)
+        net.probe_value_spikes = nengo.Probe(value.neurons, synapse=None)
+        net.probe_error1_spikes = nengo.Probe(error.sq1.ea_ensembles[0].neurons, synapse=None)
+        net.probe_error2_spikes = nengo.Probe(error.sq2.ea_ensembles[0].neurons, synapse=None)
 
     return net
 

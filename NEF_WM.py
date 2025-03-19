@@ -92,9 +92,11 @@ def build_network_WM(env, a=5e-5, n_neurons=100, n_memory=100, n_error=100, seed
         net.probe_weight = nengo.Probe(weight, synapse=syn_ff)
         net.probe_value = nengo.Probe(value, synapse=syn_ff)
         net.probe_error = nengo.Probe(error.output, synapse=syn_ff)
-        net.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=syn_ff)
-        net.probe_error1_spikes = nengo.Probe(error.sq1.ea_ensembles[0].neurons, synapse=syn_ff)
-        net.probe_error2_spikes = nengo.Probe(error.sq2.ea_ensembles[0].neurons, synapse=syn_ff)
+        net.probe_obs_spikes = nengo.Probe(obs.neurons, synapse=None)
+        net.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=None)
+        net.probe_value_spikes = nengo.Probe(value.neurons, synapse=None)
+        net.probe_error1_spikes = nengo.Probe(error.sq1.ea_ensembles[0].neurons, synapse=None)
+        net.probe_error2_spikes = nengo.Probe(error.sq2.ea_ensembles[0].neurons, synapse=None)
     return net
 
 def simulate_WM(env, n_neurons=100, n_memory=100, n_error=100, seed_sim=0, seed_net=0, progress_bar=True):
