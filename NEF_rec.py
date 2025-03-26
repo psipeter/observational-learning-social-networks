@@ -148,7 +148,7 @@ def simulate_NEF_rec(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 		return network, sim
 
 
-def run_NEF_rec(dataset, sid, alpha, z, lambd, n_neurons=200, pretrain=False, iti=False):
+def run_NEF_rec(dataset, sid, alpha, z, lambd, n_neurons=200, pretrain=True, iti=False):
 	empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
 	trials = empirical['trial'].unique() 
 	columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -161,7 +161,7 @@ def run_NEF_rec(dataset, sid, alpha, z, lambd, n_neurons=200, pretrain=False, it
 			net, sim, W = simulate_NEF_rec(W, env, alpha=alpha, n_neurons=n_neurons, lambd=lambd, z=z, seed_net=sid, train=True)
 		np.savez(f"data/NEF_rec_{dataset}_{sid}_pretrained_weight.npz", W=W)
 	else:
-		W = np.loadz(f"data/NEF_rec_{dataset}_{sid}_pretrained_weight.npz")['W']
+		W = np.load(f"data/NEF_rec_{dataset}_{sid}_pretrained_weight.npz")['W']
 	for trial in trials:
 		print(f"running sid {sid}, trial {trial}")
 		env = EnvironmentRec(dataset, sid=sid, trial=trial)
