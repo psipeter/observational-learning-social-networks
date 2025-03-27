@@ -8,6 +8,7 @@ import time
 from NEF_WM import *
 from NEF_RL import *
 from NEF_syn import *
+from NEF_rec import *
 from fit import *
 
 dataset = sys.argv[1]
@@ -72,6 +73,24 @@ if dataset=='jiang':
 		data = run_RL("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
 		param_list = [model_type, sid, alpha, z, n_all, lambd, beta]
 		param_names = ['type', 'sid', 'alpha', 'z', 'n_all', 'lambda', 'beta']
+	if model_type=='NEF_syn':
+		alpha = params['alpha'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		neurons = params['neurons'].unique()[0]
+		z = params['z'].unique()[0]
+		beta = params['beta'].unique()[0]
+		data = run_NEF_syn("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons)
+		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
+		param_names = ['type', 'sid', 'alpha', 'z', 'neurons', 'lambda', 'beta']
+	if model_type=='NEF_rec':
+		alpha = params['alpha'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		neurons = params['neurons'].unique()[0]
+		z = params['z'].unique()[0]
+		beta = params['beta'].unique()[0]
+		data = run_NEF_rec("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons)
+		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
+		param_names = ['type', 'sid', 'alpha', 'z', 'neurons', 'lambda', 'beta']
 	NLL = NLL_loss([beta], model_type, sid)
 	columns = ['type', 'sid', 'loss']
 	performance_data = pd.DataFrame([[model_type, sid, NLL]],columns=columns)
