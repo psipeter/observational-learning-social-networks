@@ -76,21 +76,21 @@ if dataset=='jiang':
 	if model_type=='NEF_syn':
 		alpha = params['alpha'].unique()[0]
 		lambd = params['lambda'].unique()[0]
-		neurons = params['neurons'].unique()[0]
+		n_neurons = params['n_neurons'].unique()[0]
 		z = params['z'].unique()[0]
 		beta = params['beta'].unique()[0]
-		data = run_NEF_syn("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons)
+		data = run_NEF_syn("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_neurons)
 		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
-		param_names = ['type', 'sid', 'alpha', 'z', 'neurons', 'lambda', 'beta']
+		param_names = ['type', 'sid', 'alpha', 'z', 'n_neurons', 'lambda', 'beta']
 	if model_type=='NEF_rec':
 		alpha = params['alpha'].unique()[0]
 		lambd = params['lambda'].unique()[0]
-		neurons = params['neurons'].unique()[0]
+		n_neurons = params['n_neurons'].unique()[0]
 		z = params['z'].unique()[0]
 		beta = params['beta'].unique()[0]
-		data = run_NEF_rec("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=neurons)
+		data = run_NEF_rec("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_neurons)
 		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
-		param_names = ['type', 'sid', 'alpha', 'z', 'neurons', 'lambda', 'beta']
+		param_names = ['type', 'sid', 'alpha', 'z', 'n_neurons', 'lambda', 'beta']
 	NLL = NLL_loss([beta], model_type, sid)
 	columns = ['type', 'sid', 'loss']
 	performance_data = pd.DataFrame([[model_type, sid, NLL]],columns=columns)
