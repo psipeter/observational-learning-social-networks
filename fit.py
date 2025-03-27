@@ -256,10 +256,10 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid, method, optuna_trials=200):
+def fit_jiang(model_type, sid, method, optuna_trials=1):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
-        if model_type in ['NEF_RL', 'NEF_WM']:
+        if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
             study.optimize(lambda trial: NEF_jiang_loss(trial, model_type, sid), n_trials=optuna_trials)
         else:
             study.optimize(lambda trial: math_jiang_loss(trial, model_type, sid), n_trials=optuna_trials)
