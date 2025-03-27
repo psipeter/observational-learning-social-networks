@@ -80,7 +80,7 @@ if dataset=='jiang':
 		z = params['z'].unique()[0]
 		beta = params['beta'].unique()[0]
 		data = run_NEF_syn("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_neurons)
-		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
+		param_list = [model_type, sid, alpha, z, n_neurons, lambd, beta]
 		param_names = ['type', 'sid', 'alpha', 'z', 'n_neurons', 'lambda', 'beta']
 	if model_type=='NEF_rec':
 		alpha = params['alpha'].unique()[0]
@@ -89,7 +89,7 @@ if dataset=='jiang':
 		z = params['z'].unique()[0]
 		beta = params['beta'].unique()[0]
 		data = run_NEF_rec("jiang", sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_neurons)
-		param_list = [model_type, sid, alpha, z, neurons, lambd, beta]
+		param_list = [model_type, sid, alpha, z, n_neurons, lambd, beta]
 		param_names = ['type', 'sid', 'alpha', 'z', 'n_neurons', 'lambda', 'beta']
 	NLL = NLL_loss([beta], model_type, sid)
 	columns = ['type', 'sid', 'loss']
