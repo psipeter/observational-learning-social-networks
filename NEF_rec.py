@@ -97,8 +97,8 @@ class EnvironmentRec():
 						self.contexts.extend(self.context_iti * ones)
 						self.neighbor_degrees.extend(neighbor_degree * ones)
 						self.neighbor_degrees.extend(neighbor_degree * ones)
-					self.obs_times.append(tt*6 + stage*tt*2 - tt)
-					self.iti_times.append(tt*6 + stage*tt*2)
+					self.obs_times.append(tt*6 + stage*self.n_neighbors*tt*2 - tt)
+					self.iti_times.append(tt*6 + stage*self.n_neighbors*tt*2)
 		self.colors = np.array(self.colors)
 		self.weights = np.array(self.weights)
 		self.contexts = np.array(self.contexts)
@@ -121,7 +121,7 @@ class EnvironmentRec():
 		return self.noise[tidx]
 
 def simulate_NEF_rec(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01, syn_fb=0.2, x_int=0.5,
-					  radius=1, a=1e-4, alpha=0.2, dt=0.001, lambd=0, z=0, train=False, plot=False):
+					  a=1e-4, alpha=0.2, dt=0.001, lambd=0, z=0, train=False, plot=False):
 	func_stim = lambda t: env.sample_color(t)
 	func_weight = lambda t: env.sample_weight(t)
 	func_neighbor_degree = lambda t: env.sample_neighbor_degree(t)
@@ -132,7 +132,8 @@ def simulate_NEF_rec(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 	w_noise = np.ones((n_neurons, 1))
 	w_inh_weight = -1000*np.ones((n_neurons, 1))
 	w_inh_update = -1000*np.ones((int(n_neurons/2), 1))
-	
+	radius = 2  if env.dataset == 'jiang' else 1
+
 	network = nengo.Network(seed=seed_net)
 	with network:
 		node_stim = nengo.Node(func_stim)
@@ -144,14 +145,14 @@ def simulate_NEF_rec(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 		stim = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		delta = nengo.Ensemble(n_neurons, 1, encoders=nengo.dists.Choice([[1]]), intercepts=nengo.dists.Uniform(0,1), seed=seed_net)
 		memory = nengo.Ensemble(n_neurons, 1, radius=radius, seed=seed_net)	
-		weight = nengo.Ensemble(n_neurons, 1, seed=seed_net)
-		neighbor_degree = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		project = nengo.Ensemble(n_neurons, 2, intercepts=nengo.dists.Uniform(x_int, 1), seed=seed_net)
+		weight = nengo.Ensemble(n_neurons, 1, radius=radius, seed=seed_net)
+		neighbor_degree = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		value = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		if train:
 			error_weight = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		else:
-			error_value = nengo.networks.Product(n_neurons, 1, seed=seed_net)
+			error_value = nengo.networks.Product(n_neurons, 1, input_magnitude=radius, seed=seed_net)
 
 		nengo.Connection(node_stim, stim, seed=seed_net)
 		nengo.Connection(node_neighbor_degree, neighbor_degree, seed=seed_net)
@@ -195,6 +196,7 @@ def simulate_NEF_rec(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 			network.probe_error_value = nengo.Probe(error_value.output, synapse=syn)
 			network.probe_error1_spikes = nengo.Probe(error_value.sq1.ea_ensembles[0].neurons, synapse=syn)
 			network.probe_error2_spikes = nengo.Probe(error_value.sq2.ea_ensembles[0].neurons, synapse=syn)
+		network.probe_memory = probe_memory
 		network.probe_node_stim = probe_node_stim
 		network.probe_stim = probe_stim
 		network.probe_neighbor_degree = probe_neighbor_degree
