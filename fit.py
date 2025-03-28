@@ -219,7 +219,7 @@ def NLL_loss(params, model_type, sid):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, method, optuna_trials=1):
+def fit_carrabin(model_type, sid, method, optuna_trials=100):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
@@ -233,21 +233,6 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
         for key, value in best_params.items():
             param_names.append(key)
             params.append(value)
-        if model_type == 'NEF_RL':
-            alpha = best_params['alpha']
-            lambd = best_params['lambda']
-            n_all = best_params['n_all']
-            data = run_RL("carrabin", sid, alpha=alpha, lambd=lambd, z=0, n_neurons=n_all, n_learning=n_all, n_error=n_all)
-        if model_type == 'NEF_WM':
-            alpha = best_params['alpha']
-            lambd = best_params['lambda']
-            n_all = best_params['n_all']
-            data = run_WM("carrabin", sid, alpha=alpha, lambd=lambd, z=0, n_memory=n_all, n_neurons=n_all, n_error=n_all)
-        if model_type == 'NEF_syn':
-            alpha = best_params['alpha']
-            lambd = best_params['lambda']
-            n_neurons = best_params['n_neurons']
-            data = run_WM("carrabin", sid, alpha=alpha, lambd=lambd, z=0, n_neurons=n_neurons)
         error = mean_loss(params[2:], model_type, sid)
         print(f"{len(study.trials)} trials completed. Best value is {loss:.4} with error {error:.4}:")
     performance_data = pd.DataFrame([[model_type, sid, loss, error]], columns=['type', 'sid', 'loss', 'error'])
@@ -256,7 +241,7 @@ def fit_carrabin(model_type, sid, method, optuna_trials=1):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid, method, optuna_trials=1):
+def fit_jiang(model_type, sid, method, optuna_trials=100):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
