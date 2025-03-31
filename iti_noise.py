@@ -20,9 +20,9 @@ if __name__ == '__main__':
 	n_neurons = params['n_neurons'].to_numpy()[0]
 	start = time.time()
 	if model_type=='NEF_syn':
-		data = run_NEF_syn("carrabin", sid=sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons, pretrain=True, iti_decode=True)
+		data = run_NEF_syn("carrabin", sid=sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons, pretrain=True, iti_noise=10)
 	if model_type=='NEF_rec':
-		data = run_NEF_rec("carrabin", sid=sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons, pretrain=True, iti_decode=True)
-	data.to_pickle(f"data/{model_type}_{sid}_iti_decode.pkl")
+		data = run_NEF_rec("carrabin", sid=sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons, pretrain=True, iti_noise=10)
+	data.to_pickle(f"data/{model_type}_{sid}_iti_noise.pkl")
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4}")

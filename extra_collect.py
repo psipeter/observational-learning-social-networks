@@ -78,3 +78,16 @@ if experiment=='iti_decode':
 			print(f"missing sid {sid}")
 	activity_data = pd.concat(dfs, ignore_index=True)
 	activity_data.to_pickle(f"data/{model_type}_{label}_iti_decode.pkl")
+
+if experiment=='iti_noise':
+	model_type = sys.argv[2]
+	sids = pd.read_pickle(f"data/carrabin.pkl")['sid'].unique()
+	label = sys.argv[-1]
+	dfs = []
+	for sid in sids:
+		try:
+			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_iti_noise.pkl"))
+		except:
+			print(f"missing sid {sid}")
+	activity_data = pd.concat(dfs, ignore_index=True)
+	activity_data.to_pickle(f"data/{model_type}_{label}_iti_noise.pkl")

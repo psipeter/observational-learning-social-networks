@@ -58,3 +58,11 @@ if experiment=='iti_decode':
 		submit_string = ["sbatch", f"extra_{sid}.sh"]
 		a = subprocess.run(submit_string)
 		time.sleep(1)
+
+if experiment=='iti_noise':
+	model_type = sys.argv[2]
+	sids = pd.read_pickle(f"data/carrabin.pkl")['sid'].unique()
+	for sid in sids:
+		submit_string = ["sbatch", f"extra_{sid}.sh"]
+		a = subprocess.run(submit_string)
+		time.sleep(1)

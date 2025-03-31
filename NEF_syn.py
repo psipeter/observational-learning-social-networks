@@ -228,7 +228,7 @@ def simulate_NEF_syn(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 		return network, sim
 
 
-def run_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=True, iti=False, iti_noise=0):
+def run_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=True, iti_decode=False, iti_noise=0):
 	empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
 	trials = empirical['trial'].unique() 
 	columns = ['type', 'sid', 'trial', 'stage', 'estimate']
@@ -246,7 +246,7 @@ def run_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=True, iti
 		print(f"running sid {sid}, trial {trial}")
 		env = EnvironmentSyn(dataset, sid=sid, trial=trial, iti_noise=iti_noise)
 		net, sim = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, lambd=lambd, z=z, seed_net=sid, train=False)
-		obs_times = env.obs_times if not iti else env.iti_times
+		obs_times = env.obs_times if not iti_decode else env.iti_times
 		for s, tidx in enumerate(obs_times):
 			stage = env.stages[s]
 			estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
