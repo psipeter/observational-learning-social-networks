@@ -142,7 +142,7 @@ def math_yoo_loss(trial, model_type, sid):
         nu = trial.suggest_float("nu", 0.01, 0.01, step=0.001)
         params = [primacy, recency, nu]
     if model_type=='RL_l':
-        alpha = trial.suggest_float("alpha", 0.001, 1.0, step=0.001)
+        alpha = trial.suggest_float("alpha", 0.001, 3.0, step=0.001)
         lambd = trial.suggest_float("lambda", 0.001, 3.0, step=0.001)
         params = [alpha, lambd]
     loss = yoo_loss(params, model_type, sid)
@@ -213,10 +213,10 @@ def get_expectations_yoo(model_type, params, sid, block, trial, stage, human):
     else:
         subdata = human.query("sid==@sid & block==@block & trial==@trial & stage<=@stage")
         observations = subdata['observation'].to_numpy()
-        expectation = 0
         if model_type == 'DG':
             expectation = np.mean(observations)
         elif model_type == 'RL_l':
+            expectation = 0
             for o, obs in enumerate(observations):
                 error = obs - expectation
                 weight = params[0] * np.power(o+1, -params[1])
@@ -237,7 +237,7 @@ def yoo_loss(params, model_type, sid):
     errors = []
     for block in blocks:
         for trial in trials:
-            for stage in stages:
+            for stage in stages[1:]: # stage 1 data are unreliable, and Yoo paper also excludes them
                 # does not account for within-response dynamics of joystick
                 response_model = get_expectations_yoo(model_type, params, sid, block, trial, stage, human)
                 # response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].mean()  # mean value of all slider positions for the current stage
