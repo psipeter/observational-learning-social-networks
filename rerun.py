@@ -75,6 +75,8 @@ if __name__ == '__main__':
 		choice_data = rerun_carrabin(model_type, sid)
 	elif dataset=='jiang':
 		choice_data = rerun_jiang(model_type, sid)
+	elif dataset=='yoo':
+		choice_data = rerun_yoo(model_type, sid)
 	print(choice_data)
 	end = time.time()
 	print(f"runtime {(end-start)/60:.4} min")
