@@ -53,16 +53,16 @@ def rerun_jiang(model_type, sid, seed=0):
 def rerun_yoo(model_type, sid):
 	human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
 	params = pd.read_pickle(f"data/{model_type}_yoo_{sid}_params.pkl").loc[0].to_numpy()[2:]
-	sids = human['sid'].unique()
-	blocks = human['block'].unique()
-	trials = human['trial'].unique()
-	stages = human['stage'].unique()
+	# sids = human['sid'].unique()
+	# blocks = human['block'].unique()
+	# trials = human['trial'].unique()
+	# stages = human['stage'].unique()
 	dfs = []
 	columns = ['type', 'sid', 'block', 'trial', 'stage', 'response']
-	for sid in sids:  # df['sid'].unique():
-		for block in blocks:  # human.query("sid==@sid")['block'].unique():
-			for trial in trials:  # human.query("sid==@sid & block==@block")['trial'].unique():
-				for stage in stages:  # human.query("sid==@sid & block==@block & trial==@trial")['stage'].unique():
+	for sid in human['sid'].unique():
+		for block in human.query("sid==@sid")['block'].unique():
+			for trial in human.query("sid==@sid & block==@block")['trial'].unique():
+				for stage in human.query("sid==@sid & block==@block & trial==@trial")['stage'].unique():
 					subdata = human.query("sid==@sid & block==@block & trial==@trial")
 					response = get_expectations_yoo(model_type, params, sid, block, trial, stage, subdata)
 					dfs.append(pd.DataFrame([[model_type, sid, block, trial, stage, response]], columns=columns))
