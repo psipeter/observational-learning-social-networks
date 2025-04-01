@@ -50,6 +50,22 @@ def rerun_jiang(model_type, sid, seed=0):
 	dynamics_data.to_pickle(f"data/{model_type}_jiang_{sid}_dynamics.pkl")
 	return dynamics_data
 
+def rerun_yo(model_type, sid):
+	human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
+	params = pd.read_pickle(f"data/{model_type}_yoo_{sid}_params.pkl").loc[0].to_numpy()[2:]
+	dfs = []
+	columns = ['type', 'sid', 'block', 'trial', 'stage', 'response']
+	for sid in df['sid'].unique():
+		for block in human.query("sid==@sid")['block'].unique():
+			for trial in human.query("sid==@sid & block==@block")['trial'].unique():
+				for stage in human.query("sid==@sid & block==@block & trial==@trial")['stage'].unique():
+					subdata = human.query("sid==@sid & block==@block & trial==@trial")
+					response = get_expectations_yoo(model_type, params, sid, block, trial, stage, subdata)
+					dfs.append(pd.DataFrame([[model_type, sid, block, trial, stage, response]], columns=columns))
+	dynamics_data = pd.concat(dfs, ignore_index=True)
+	dynamics_data.to_pickle(f"data/{model_type}_yoo_{sid}_dynamics.pkl")
+	return dynamics_data
+
 if __name__ == '__main__':
 	dataset = sys.argv[1]
 	model_type = sys.argv[2]
