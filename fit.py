@@ -70,6 +70,31 @@ def NEF_jiang_loss(trial, model_type, sid):
     NLL = NLL_loss([beta], model_type, sid)
     return NLL
 
+def NEF_carrabin_loss(trial, model_type, sid):
+    pass
+    # if model_type=='NEF_RL':
+    #     alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+    #     n_all = trial.suggest_int("n_all", 10, 500, step=10)
+    #     lambd = trial.suggest_float("lambda", 1.0, 1.0, step=0.01)
+    #     data = run_RL("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+    # if model_type=='NEF_WM':
+    #     alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+    #     n_all = trial.suggest_int("n_all", 10, 500, step=10)
+    #     lambd = trial.suggest_float("lambda", 1.0, 1.0, step=0.01)
+    #     data = run_WM("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+    # if model_type=='NEF_syn':
+    #     alpha = trial.suggest_float("alpha", 1e-5, 1e-3, step=1e-5)
+    #     n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
+    #     lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+    #     data = run_NEF_syn("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+    # if model_type=='NEF_rec':
+    #     alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
+    #     n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
+    #     lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+    #     data = run_NEF_rec("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+    # loss = QID_loss([], model_type, sid)
+    return loss
+
 def math_carrabin_loss(trial, model_type, sid):
     if model_type=='RL_n':
         alpha = trial.suggest_float("alpha", 0.001, 1.0, step=0.001)
@@ -106,6 +131,21 @@ def math_jiang_loss(trial, model_type, sid):
         beta = trial.suggest_float("beta", 0.01, 10.0, step=0.01)
         params = [alpha, z, lambd, beta]
     loss = NLL_loss(params, model_type, sid)
+    return loss
+
+def math_yoo_loss(trial, model_type, sid):
+    if model_type=='DG':
+        params = []
+    if model_type=='ADM':
+        primacy = trial.suggest_float("primacy", 0.001, 1.0, step=0.001)
+        recency = trial.suggest_float("recency", 0.001, 1.0, step=0.001)
+        nu = trial.suggest_float("nu", 0.01, 0.01, step=0.001)
+        params = [primacy, recency, nu]
+    if model_type=='RL_l':
+        alpha = trial.suggest_float("alpha", 0.001, 1.0, step=0.001)
+        lambd = trial.suggest_float("lambda", 0.001, 3.0, step=0.001)
+        params = [alpha, lambd]
+    loss = yoo_loss(params, model_type, sid)
     return loss
 
 def get_expectations_carrabin(model_type, params, sid, trial, stage, rng=np.random.RandomState(seed=0)):
@@ -164,6 +204,45 @@ def get_expectations_jiang(model_type, params, sid, trial, stage, full=False):
             expectation = np.clip(expectation, -1, 1)
             expectations.append(expectation)
     return expectation if not full else expectations
+
+def get_expectations_yoo(model_type, params, sid, block, trial, stage, human):
+    # human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
+    if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn', 'NEF_rec']:
+        nef_data = pd.read_pickle(f"data/{model_type}_yoo_{sid}_estimates.pkl")
+        expectation = nef_data.query("block==@block & trial==@trial & stage==@stage")['estimate'].unique()[0]
+    else:
+        subdata = human.query("block==@block & trial==@trial & stage<=@stage")
+        observations = subdata['observation'].to_numpy()
+        expectation = 0
+        if model_type == 'DG':
+            expectation = np.mean(observations)
+        else:
+            for o, obs in enumerate(observations):
+                if model_type == 'RL_l':
+                    error = obs - expectation
+                    weight = params[0] * np.power(o+1, -params[1])
+                    expectation += weight*error
+                    expectation = np.clip(expectation, -1, 1)
+                if model_type == 'ADM':
+                    pass  # TODO
+    return expectation
+
+def yoo_loss(params, model_type, sid):
+    human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
+    blocks = human['block'].unique()
+    trials = human['trial'].unique()
+    stages = human['stage'].unique()
+    errors = []
+    for block in blocks:
+        for trial in trials:
+            for stage in stages:
+                # does not account for within-response dynamics of joystick
+                response_model = get_expectations_yoo(model_type, params, sid, block, trial, stage, human)
+                # response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].mean()  # mean value of all slider positions for the current stage
+                response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].to_numpy()[-1]  # final slider position for the current stage
+                errors.append(np.abs(response_human - response_model))
+    error = np.mean(errors)
+    return error
 
 def mean_loss(params, model_type, sid):
     human = pd.read_pickle(f"data/carrabin.pkl").query("sid==@sid")
@@ -262,6 +341,27 @@ def fit_jiang(model_type, sid, method, optuna_trials=100):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
+def fit_yoo(model_type, sid, method, optuna_trials=100):
+    if method=='optuna':
+        study = optuna.create_study(direction="minimize")
+        if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
+            study.optimize(lambda trial: NEF_yoo_loss(trial, model_type, sid), n_trials=optuna_trials)
+        else:
+            study.optimize(lambda trial: math_yoo_loss(trial, model_type, sid), n_trials=optuna_trials)
+        best_params = study.best_trial.params
+        loss = study.best_trial.value
+        param_names = ["type", "sid"]
+        params = [model_type, sid]
+        for key, value in best_params.items():
+            param_names.append(key)
+            params.append(value)
+        print(f"{len(study.trials)} trials completed. Best value is {loss:.4}")
+    performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
+    performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
+    fitted_params = pd.DataFrame([params], columns=param_names)
+    fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
+    return performance_data, fitted_params
+
 if __name__ == '__main__':
     dataset = sys.argv[1]
     model_type = sys.argv[2]
@@ -273,6 +373,8 @@ if __name__ == '__main__':
         performance_data, fitted_params = fit_carrabin(model_type, sid, method)
     elif dataset=='jiang':
         performance_data, fitted_params = fit_jiang(model_type, sid, method)
+    elif dataset=='yoo':
+        performance_data, fitted_params = fit_yoo(model_type, sid, method)
     print(performance_data)
     print(fitted_params)
     end = time.time()
