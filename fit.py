@@ -205,13 +205,13 @@ def get_expectations_jiang(model_type, params, sid, trial, stage, full=False):
             expectations.append(expectation)
     return expectation if not full else expectations
 
-def get_expectations_yoo(model_type, params, sid, block, trial, stage, human):
+def get_expectations_yoo(model_type, params, sid, trial, stage, human):
     # human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
     if model_type in ['NEF_WM', 'NEF_RL', 'NEF_syn', 'NEF_rec']:
         nef_data = pd.read_pickle(f"data/{model_type}_yoo_{sid}_estimates.pkl")
-        expectation = nef_data.query("block==@block & trial==@trial & stage==@stage")['estimate'].unique()[0]
+        expectation = nef_data.query("trial==@trial & stage==@stage")['estimate'].unique()[0]
     else:
-        subdata = human.query("sid==@sid & block==@block & trial==@trial & stage<=@stage")
+        subdata = human.query("sid==@sid & trial==@trial & stage<=@stage")
         observations = subdata['observation'].to_numpy()
         if model_type == 'DG':
             expectation = np.mean(observations)
@@ -231,19 +231,15 @@ def get_expectations_yoo(model_type, params, sid, block, trial, stage, human):
 def yoo_loss(params, model_type, sid):
     # human = pd.read_pickle(f"data/yoo_full.pkl").query("sid==@sid")
     human = pd.read_pickle(f"data/yoo.pkl").query("sid==@sid")
-    blocks = human['block'].unique()
     trials = human['trial'].unique()
     stages = human['stage'].unique()
     errors = []
-    for block in blocks:
-        for trial in trials:
-            for stage in stages[1:]: # stage 1 data are unreliable, and Yoo paper also excludes them
-                # does not account for within-response dynamics of joystick
-                response_model = get_expectations_yoo(model_type, params, sid, block, trial, stage, human)
-                # response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].mean()  # mean value of all slider positions for the current stage
-                # response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].to_numpy()[-1]  # final slider position for the current stage
-                response_human = human.query("block==@block & trial==@trial and stage==@stage")['response'].unique()[0]  # final slider position for the current stage
-                errors.append(np.abs(response_human - response_model))
+    for trial in trials:
+        for stage in stages[1:]: # stage 1 data are unreliable, and Yoo paper also excludes them
+            # does not account for within-response dynamics of joystick
+            response_model = get_expectations_yoo(model_type, params, sid, trial, stage, human)
+            response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]  # final slider position for the current stage
+            errors.append(np.abs(response_human - response_model))
     error = np.mean(errors)
     return error
 
@@ -344,7 +340,7 @@ def fit_jiang(model_type, sid, method, optuna_trials=100):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_yoo(model_type, sid, method, optuna_trials=300):
+def fit_yoo(model_type, sid, method, optuna_trials=1):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
