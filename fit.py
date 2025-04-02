@@ -235,7 +235,7 @@ def yoo_loss(params, model_type, sid):
     stages = human['stage'].unique()
     errors = []
     for trial in trials:
-        for stage in stages[1:]: # stage 1 data are unreliable, and Yoo paper also excludes them
+        for stage in stages:
             # does not account for within-response dynamics of joystick
             response_model = get_expectations_yoo(model_type, params, sid, trial, stage, human)
             response_human = human.query("trial==@trial and stage==@stage")['response'].unique()[0]  # final slider position for the current stage
