@@ -98,5 +98,40 @@ if dataset=='jiang':
 	fitted_params = pd.DataFrame([param_list], columns=param_names)
 	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
 
+if dataset=='yoo':
+	if model_type=='NEF_WM':
+		alpha = params['alpha'].unique()[0]
+		n_all = params['n_all'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		data = run_WM("yoo", sid, alpha=alpha, z=0, lambd=lambd, n_memory=n_all, n_neurons=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, n_all, lambd]
+		param_names = ['type', 'sid', 'alpha', 'n_all', 'lambda']
+	if model_type=='NEF_RL':
+		alpha = params['alpha'].unique()[0]
+		n_all = params['n_all'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		data = run_RL("yoo", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_all, n_learning=n_all, n_error=n_all)
+		param_list = [model_type, sid, alpha, n_all, lambd]
+		param_names = ['type', 'sid', 'alpha', 'n_all', 'lambda']
+	if model_type=='NEF_syn':
+		alpha = params['alpha'].unique()[0]
+		n_neurons = params['n_neurons'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		data = run_NEF_syn("yoo", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+		param_list = [model_type, sid, alpha, n_neurons, lambd]
+		param_names = ['type', 'sid', 'alpha', 'n_neurons', 'lambda']
+	if model_type=='NEF_rec':
+		alpha = params['alpha'].unique()[0]
+		n_neurons = params['n_neurons'].unique()[0]
+		lambd = params['lambda'].unique()[0]
+		data = run_NEF_rec("yoo", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
+		param_list = [model_type, sid, alpha, n_neurons, lambd]
+		param_names = ['type', 'sid', 'alpha', 'n_neurons', 'lambda']
+	loss = yoo_loss([], model_type, sid)
+	performance_data = pd.DataFrame([[model_type, sid, loss]], columns=['type', 'sid', 'loss'])
+	performance_data.to_pickle(f"data/{model_type}_{dataset}_{sid}_performance.pkl")
+	fitted_params = pd.DataFrame([param_list], columns=param_names)
+	fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
+
 end = time.time()
 print(f"runtime {(end-start)/60:.4} min")
