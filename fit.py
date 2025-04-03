@@ -26,12 +26,12 @@ def NEF_carrabin_loss(trial, model_type, sid):
     if model_type=='NEF_syn':
         alpha = trial.suggest_float("alpha", 1e-5, 1e-3, step=1e-5)
         n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
-        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+        lambd = trial.suggest_float("lambda", 0.0, 1.0, step=0.01)
         data = run_NEF_syn("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
     if model_type=='NEF_rec':
         alpha = trial.suggest_float("alpha", 0.01, 1.0, step=0.01)
         n_neurons = trial.suggest_int("n_neurons", 10, 1000, step=10)
-        lambd = trial.suggest_float("lambda", 0.0, 0.0, step=0.01)
+        lambd = trial.suggest_float("lambda", 0.0, 1.0, step=0.01)
         data = run_NEF_rec("carrabin", sid, alpha=alpha, z=0, lambd=lambd, n_neurons=n_neurons)
     loss = QID_loss([], model_type, sid)
     return loss
@@ -297,7 +297,7 @@ def NLL_loss(params, model_type, sid):
             NLL -= np.log(prob) if act==1 else np.log(1-prob)
     return NLL
 
-def fit_carrabin(model_type, sid, method, optuna_trials=100):
+def fit_carrabin(model_type, sid, method, optuna_trials=200):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
@@ -319,7 +319,7 @@ def fit_carrabin(model_type, sid, method, optuna_trials=100):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_jiang(model_type, sid, method, optuna_trials=100):
+def fit_jiang(model_type, sid, method, optuna_trials=200):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
@@ -340,7 +340,7 @@ def fit_jiang(model_type, sid, method, optuna_trials=100):
     fitted_params.to_pickle(f"data/{model_type}_{dataset}_{sid}_params.pkl")
     return performance_data, fitted_params
 
-def fit_yoo(model_type, sid, method, optuna_trials=1):
+def fit_yoo(model_type, sid, method, optuna_trials=200):
     if method=='optuna':
         study = optuna.create_study(direction="minimize")
         if model_type in ['NEF_RL', 'NEF_WM', 'NEF_syn', 'NEF_rec']:
