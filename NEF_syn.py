@@ -8,7 +8,7 @@ from uniform_encoders import *
 from environments import *
 
 def simulate_NEF_syn(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01, syn_fb=0.2, x_int=0.5,
-					  a=1e-4, alpha=6e-5, dt=0.001, z=0, train=False, plot=False):
+					  a=1e-4, alpha=6e-5, dt=0.001, z=0, train=False, plot=False, syn_spike=0.01):
 	nengo.rc.set("decoder_cache", "enabled", "False")
 	func_stim = lambda t: env.sample_color(t)
 	func_weight = lambda t: env.sample_weight(t)
@@ -95,8 +95,8 @@ def simulate_NEF_syn(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 			probe_learned_weights = nengo.Probe(conn_weight, "weights")
 		else:
 			network.probe_error_value = nengo.Probe(error_value.output, synapse=0.01)
-			network.probe_error1_spikes = nengo.Probe(error_value.sq1.ea_ensembles[0].neurons, synapse=None)
-			network.probe_error2_spikes = nengo.Probe(error_value.sq2.ea_ensembles[0].neurons, synapse=None)
+			network.probe_error1_spikes = nengo.Probe(error_value.sq1.ea_ensembles[0].neurons, synapse=syn_spike)
+			network.probe_error2_spikes = nengo.Probe(error_value.sq2.ea_ensembles[0].neurons, synapse=syn_spike)
 		network.probe_stim = probe_stim
 		network.probe_neighbor_degree = probe_neighbor_degree
 		network.probe_target = probe_target
@@ -105,10 +105,10 @@ def simulate_NEF_syn(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 		network.probe_value = probe_value
 		network.probe_project = probe_project
 		network.probe_context = probe_context
-		network.probe_stim_spikes = nengo.Probe(stim.neurons, synapse=None)
-		network.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=None)
-		network.probe_context_spikes = nengo.Probe(context.neurons, synapse=None)
-		network.probe_value_spikes = nengo.Probe(value.neurons, synapse=None)
+		network.probe_stim_spikes = nengo.Probe(stim.neurons, synapse=syn_spike)
+		network.probe_weight_spikes = nengo.Probe(weight.neurons, synapse=syn_spike)
+		network.probe_context_spikes = nengo.Probe(context.neurons, synapse=syn_spike)
+		network.probe_value_spikes = nengo.Probe(value.neurons, synapse=syn_spike)
 
 	sim = nengo.Simulator(network, dt=dt, progress_bar=False)
 	with sim:
