@@ -60,7 +60,8 @@ if experiment=='activities':
 	dfs = []
 	for sid in sids:
 		try:
-			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl"))
+			# dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl"))
+			dfs.append(pd.read_pickle(f"data/{model_type}_jiang_{sid}_activities.pkl"))
 		except:
 			print(f"missing sid {sid}")
 	activity_data = pd.concat(dfs, ignore_index=True)
