@@ -23,7 +23,7 @@ if __name__ == '__main__':
 		start = time.time()
 		activity_data = activities_NEF_syn(dataset='jiang', sid=sid, alpha=alpha, z=z, lambd=lambd, n_neurons=n_neurons)
 		print(activity_data)
-		# activity_data.to_pickle(f"data/{model_type}_{sid}_activities.pkl")
+		activity_data.to_pickle(f"data/{model_type}_{sid}_activities.pkl")
 		end = time.time()
 		print(f"runtime {(end-start)/60:.4} min")
 	else:

@@ -155,7 +155,7 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 	dfs = []
 	if pretrain:
 		W = np.zeros((1, n_neurons))
-		for trial in trials[:20]:
+		for trial in trials[:2]:
 			print(f"training sid {sid}, trial {trial}")
 			env = EnvironmentCount(dataset, sid=sid, trial=trial, lambd=lambd)
 			net, sim, W = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, z=z, seed_net=sid, train=True)
@@ -168,6 +168,7 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 		net, sim = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, z=z, seed_net=sid, train=False)
 		obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt - env.T/env.dt/2
 		obs_times = obs_times.astype(int)
+		stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [1 for _ in range(env.n_neighbors)]
 		for s, tidx in enumerate(obs_times):
 			obs = np.mean(sim.data[net.probe_stim][tidx-100: tidx])
 			estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
@@ -186,9 +187,10 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 				df['population'] = pop
 				df['type'] = "NEF_syn"
 				df['trial'] = trial
-				df['stage'] = s
+				df['stage'] = stages[s]
 				df['aPE'] = aPE
 				df['RD'] = RD
+				df['sid'] = sid
 				df['lambd'] = lambd
 				dfs.append(df)
 	data = pd.concat(dfs, ignore_index=True)
