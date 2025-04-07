@@ -168,7 +168,7 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 		net, sim = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, z=z, seed_net=sid, train=False)
 		obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt - env.T/env.dt/2
 		obs_times = obs_times.astype(int)
-		stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [1 for _ in range(env.n_neighbors)]
+		stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [3 for _ in range(env.n_neighbors)]
 		for s, tidx in enumerate(obs_times):
 			obs = np.mean(sim.data[net.probe_stim][tidx-100: tidx])
 			estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
