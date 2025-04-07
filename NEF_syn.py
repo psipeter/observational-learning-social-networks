@@ -155,7 +155,7 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 	dfs = []
 	if pretrain:
 		W = np.zeros((1, n_neurons))
-		for trial in trials[:2]:
+		for trial in trials[:20]:
 			print(f"training sid {sid}, trial {trial}")
 			env = EnvironmentCount(dataset, sid=sid, trial=trial, lambd=lambd)
 			net, sim, W = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, z=z, seed_net=sid, train=True)
@@ -169,11 +169,13 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 		obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt - env.T/env.dt/2
 		obs_times = obs_times.astype(int)
 		stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [3 for _ in range(env.n_neighbors)]
+		RDs = empirical.query("trial==@trial")['RD'].to_numpy()
+		print(obs_times, stages, RDs)
 		for s, tidx in enumerate(obs_times):
 			obs = np.mean(sim.data[net.probe_stim][tidx-100: tidx])
 			estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
 			aPE = np.abs(obs - estimate)
-			RD = np.mean(sim.data[net.probe_neighbor_degree][tidx-100: tidx])
+			# RD = np.mean(sim.data[net.probe_neighbor_degree][tidx-100: tidx])
 			# RD = empirical.query("trial==@trial")['RD'].to_numpy()[s]
 			# stage = empirical.query("trial==@trial")['stage'].to_numpy()[s]
 			for pop in ['weight', 'error1', 'error2']:
@@ -189,7 +191,7 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 				df['trial'] = trial
 				df['stage'] = stages[s]
 				df['aPE'] = aPE
-				df['RD'] = RD
+				df['RD'] = RDs[s]
 				df['sid'] = sid
 				df['lambd'] = lambd
 				dfs.append(df)
