@@ -56,7 +56,7 @@ if experiment=='counting':
 if experiment=='activities':
 	dataset = sys.argv[2]
 	model_type = sys.argv[3]
-	sids = pd.read_pickle(f"data/jiang.pkl")['sid'].unique()
+	sids = pd.read_pickle(f"data/{dataset}.pkl")['sid'].unique()
 	label = sys.argv[-1]
 	dfs = []
 	for sid in sids:
