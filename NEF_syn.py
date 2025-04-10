@@ -42,7 +42,7 @@ def simulate_NEF_syn(learned_weights, env, n_neurons=1000, seed_net=0, syn=0.01,
 		delta = nengo.Ensemble(n_neurons, 1, encoders=nengo.dists.Choice([[1]]), intercepts=nengo.dists.Uniform(0,1), seed=seed_net)
 		memory = nengo.Ensemble(n_neurons, 1, radius=radius, seed=seed_net)	
 		project = nengo.Ensemble(n_neurons, 2, intercepts=nengo.dists.Uniform(x_int, 1), seed=seed_net)
-		weight = nengo.Ensemble(n_neurons, 1, radius=radius, seed=seed_net)
+		weight = nengo.Ensemble(n_neurons, 1, seed=seed_net)  # radius=radius,
 		neighbor_degree = nengo.Ensemble(n_neurons, 1, seed=seed_net)
 		context = nengo.Ensemble(n_neurons, env.dim_context, encoders=encoders_context, intercepts=nengo.dists.Uniform(0, 1), seed=seed_net)
 		value = nengo.Ensemble(n_neurons, 1, seed=seed_net)
