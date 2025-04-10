@@ -77,10 +77,11 @@ if experiment=='counting':
 				rsh.write(run_string)
 
 if experiment=='activities':
-	model_type = sys.argv[2]
+	dataset = sys.argv[2]
+	model_type = sys.argv[3]
 	sids = pd.read_pickle(f"data/jiang.pkl")['sid'].unique()
 	for sid in sids:
-		run_string = f"python activities.py {model_type} {sid}"
+		run_string = f"python activities.py {dataset} {model_type} {sid}"
 		file_string = f'extra_{sid}.sh'
 		with open (file_string, 'w') as rsh:
 			rsh.write('''#!/bin/bash''')

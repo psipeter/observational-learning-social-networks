@@ -54,18 +54,19 @@ if experiment=='counting':
 	noise_data.to_pickle(f"data/{dataset}_{label}_counting.pkl")
 
 if experiment=='activities':
-	model_type = sys.argv[2]
+	dataset = sys.argv[2]
+	model_type = sys.argv[3]
 	sids = pd.read_pickle(f"data/jiang.pkl")['sid'].unique()
 	label = sys.argv[-1]
 	dfs = []
 	for sid in sids:
 		try:
 			# dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl"))
-			dfs.append(pd.read_pickle(f"data/{model_type}_{sid}_activities.pkl"))
+			dfs.append(pd.read_pickle(f"data/{dataset}_{model_type}_{sid}_activities.pkl"))
 		except:
 			print(f"missing sid {sid}")
 	activity_data = pd.concat(dfs, ignore_index=True)
-	activity_data.to_pickle(f"data/{model_type}_{label}_activities.pkl")
+	activity_data.to_pickle(f"data/{dataset}_{model_type}_{label}_activities.pkl")
 
 if experiment=='iti_decode':
 	model_type = sys.argv[2]

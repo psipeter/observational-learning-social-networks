@@ -151,7 +151,6 @@ def run_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=True, iti
 def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=True):
 	empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
 	trials = empirical['trial'].unique() 
-	columns = ['type', 'trial', 'stage', 'population', 'neuron', 'aPE', 'RD', 'lambd', 'activity']
 	dfs = []
 	if pretrain:
 		W = np.zeros((1, n_neurons))
@@ -166,35 +165,56 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 		print(f"running sid {sid}, trial {trial}")
 		env = EnvironmentCount(dataset, sid=sid, trial=trial, lambd=lambd)
 		net, sim = simulate_NEF_syn(W, env, alpha=alpha, n_neurons=n_neurons, z=z, seed_net=sid, train=False)
-		obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt - env.T/env.dt/2
-		obs_times = obs_times.astype(int)
-		stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [3 for _ in range(env.n_neighbors)]
-		RDs = empirical.query("trial==@trial")['RD'].to_numpy()
-		print(obs_times, stages, RDs)
-		for s, tidx in enumerate(obs_times):
-			obs = np.mean(sim.data[net.probe_stim][tidx-100: tidx])
-			estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
-			aPE = np.abs(obs - estimate)
-			# RD = np.mean(sim.data[net.probe_neighbor_degree][tidx-100: tidx])
-			# RD = empirical.query("trial==@trial")['RD'].to_numpy()[s]
-			# stage = empirical.query("trial==@trial")['stage'].to_numpy()[s]
-			for pop in ['weight', 'error1', 'error2']:
-				if pop=='weight': activity = np.mean(sim.data[net.probe_weight_spikes][tidx-100: tidx], axis=0)
-				if pop=='error1': activity = np.mean(sim.data[net.probe_error1_spikes][tidx-100: tidx], axis=0)
-				if pop=='error2': activity = np.mean(sim.data[net.probe_error2_spikes][tidx-100: tidx], axis=0)
-				neurons = np.arange(1, activity.shape[0]+1, 1)
-				df = pd.DataFrame(columns=columns)
-				df['neuron'] = neurons
-				df['activity'] = np.around(activity, 4)
-				df['population'] = pop
-				df['type'] = "NEF_syn"
-				df['trial'] = trial
-				df['stage'] = stages[s]
-				df['aPE'] = aPE
-				df['RD'] = RDs[s]
-				df['sid'] = sid
-				df['lambd'] = lambd
-				dfs.append(df)
+		if dataset=='jiang':
+			columns = ['type', 'sid', 'trial', 'stage', 'population', 'neuron', 'aPE', 'RD', 'lambd', 'activity']
+			obs_times = np.arange(3, 3+3*env.n_neighbors+1, 1) * env.T/env.dt - env.T/env.dt/2
+			obs_times = obs_times.astype(int)
+			stages = [0] + [1 for _ in range(env.n_neighbors)] + [2 for _ in range(env.n_neighbors)] + [3 for _ in range(env.n_neighbors)]
+			RDs = empirical.query("trial==@trial")['RD'].to_numpy()
+			print(obs_times, stages, RDs)
+			for s, tidx in enumerate(obs_times):
+				obs = np.mean(sim.data[net.probe_stim][tidx-100: tidx])
+				estimate = np.mean(sim.data[net.probe_value][tidx-100: tidx])
+				aPE = np.abs(obs - estimate)
+				# RD = np.mean(sim.data[net.probe_neighbor_degree][tidx-100: tidx])
+				# RD = empirical.query("trial==@trial")['RD'].to_numpy()[s]
+				# stage = empirical.query("trial==@trial")['stage'].to_numpy()[s]
+				for pop in ['weight', 'error1', 'error2']:
+					if pop=='weight': activity = np.mean(sim.data[net.probe_weight_spikes][tidx-100: tidx], axis=0)
+					if pop=='error1': activity = np.mean(sim.data[net.probe_error1_spikes][tidx-100: tidx], axis=0)
+					if pop=='error2': activity = np.mean(sim.data[net.probe_error2_spikes][tidx-100: tidx], axis=0)
+					neurons = np.arange(1, activity.shape[0]+1, 1)
+					df = pd.DataFrame(columns=columns)
+					df['neuron'] = neurons
+					df['activity'] = np.around(activity, 4)
+					df['population'] = pop
+					df['type'] = "NEF_syn"
+					df['trial'] = trial
+					df['stage'] = stages[s]
+					df['aPE'] = aPE
+					df['RD'] = RDs[s]
+					df['sid'] = sid
+					df['lambd'] = lambd
+					dfs.append(df)
+		if dataset=='yoo':
+			columns = ['type', 'sid', 'trial', 'stage', 'population', 'neuron', 'lambd', 'activity']
+			obs_times = env.obs_times
+			stages = env.stages
+			for s, tidx in enumerate(obs_times):
+				for pop in ['error1', 'error2']:
+					if pop=='error1': activity = np.mean(sim.data[net.probe_error1_spikes][tidx-100: tidx], axis=0)
+					if pop=='error2': activity = np.mean(sim.data[net.probe_error2_spikes][tidx-100: tidx], axis=0)
+					neurons = np.arange(1, activity.shape[0]+1, 1)
+					df = pd.DataFrame(columns=columns)
+					df['neuron'] = neurons
+					df['activity'] = np.around(activity, 4)
+					df['population'] = pop
+					df['type'] = "NEF_syn"
+					df['trial'] = trial
+					df['stage'] = stages[s]
+					df['sid'] = sid
+					df['lambd'] = lambd
+					dfs.append(df)
 	data = pd.concat(dfs, ignore_index=True)
 	data.to_pickle(f"data/NEF_syn_{dataset}_{sid}_activities.pkl")
 	return data

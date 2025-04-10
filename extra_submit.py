@@ -44,7 +44,8 @@ if experiment=='counting':
 			time.sleep(1)
 
 if experiment=='activities':
-	model_type = sys.argv[2]
+	dataset = sys.argv[2]
+	model_type = sys.argv[3]
 	sids = pd.read_pickle(f"data/jiang.pkl")['sid'].unique()
 	for sid in sids:
 		submit_string = ["sbatch", f"extra_{sid}.sh"]
