@@ -201,7 +201,8 @@ def activities_NEF_syn(dataset, sid, alpha, z, lambd, n_neurons=500, pretrain=Tr
 			obs_times = env.obs_times
 			stages = env.stages
 			for s, tidx in enumerate(obs_times):
-				for pop in ['error1', 'error2']:
+				for pop in ['weight', 'error1', 'error2']:
+					if pop=='weight': activity = np.mean(sim.data[net.probe_weight_spikes][tidx-100: tidx], axis=0)
 					if pop=='error1': activity = np.mean(sim.data[net.probe_error1_spikes][tidx-100: tidx], axis=0)
 					if pop=='error2': activity = np.mean(sim.data[net.probe_error2_spikes][tidx-100: tidx], axis=0)
 					neurons = np.arange(1, activity.shape[0]+1, 1)
