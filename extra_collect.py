@@ -98,10 +98,10 @@ if experiment in ['weighting_error_lambd', 'weighting_error_neurons']:
 	n_sid = int(sys.argv[2])
 	if experiment=='weighting_error_lambd':
 		n_neurons = [int(sys.argv[3])]
-		lambdas = [float(arg) for arg in sys.argv[4:]]
+		lambdas = [float(arg) for arg in sys.argv[4:-1]]
 	if experiment=='weighting_error_neurons':
 		lambdas = [float(sys.argv[3])]
-		n_neurons = [int(arg) for arg in sys.argv[4:]]
+		n_neurons = [int(arg) for arg in sys.argv[4:-1]]
 	sids = pd.read_pickle(f"data/yoo.pkl")['sid'].unique()[:n_sid]
 	label = sys.argv[-1]
 	dfs = []
