@@ -67,3 +67,21 @@ if experiment=='iti_noise':
 		submit_string = ["sbatch", f"extra_{sid}.sh"]
 		a = subprocess.run(submit_string)
 		time.sleep(1)
+
+if experiment in ['weighting_error_lambd', 'weighting_error_neurons']:
+	n_sid = int(sys.argv[2])
+	if experiment=='weighting_error_lambd':
+		n_neurons = [int(sys.argv[3])]
+		lambdas = [int(arg) for arg in sys.argv[4:]]
+	if experiment=='weighting_error_neurons':
+		lambdas = [int(sys.argv[3])]
+		n_neurons = [int(arg) for arg in sys.argv[4:]]
+	sids = pd.read_pickle(f"data/yoo.pkl")['sid'].unique()[:n_sid]
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			for lambd in lambdas:
+				n += 1
+				submit_string = ["sbatch", f"extra_{n}.sh"]
+				a = subprocess.run(submit_string)
+				time.sleep(1)

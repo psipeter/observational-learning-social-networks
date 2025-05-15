@@ -93,3 +93,26 @@ if experiment=='iti_noise':
 			print(f"missing sid {sid}")
 	activity_data = pd.concat(dfs, ignore_index=True)
 	activity_data.to_pickle(f"data/{model_type}_{label}_iti_noise.pkl")
+
+if experiment in ['weighting_error_lambd', 'weighting_error_neurons']:
+	n_sid = int(sys.argv[2])
+	if experiment=='weighting_error_lambd':
+		n_neurons = [int(sys.argv[3])]
+		lambdas = [int(arg) for arg in sys.argv[4:]]
+	if experiment=='weighting_error_neurons':
+		lambdas = [int(sys.argv[3])]
+		n_neurons = [int(arg) for arg in sys.argv[4:]]
+	sids = pd.read_pickle(f"data/yoo.pkl")['sid'].unique()[:n_sid]
+	label = sys.argv[-1]
+	dfs = []
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			for lambd in lambdas:
+				n += 1
+				try:
+					dfs.append(pd.read_pickle(f"weighted_error_{sid}_{lambd}_{neurons}.pkl.pkl"))
+				except:
+					print(f"missing sid {sid} neurons {neurons} lambda {lambd}")
+	noise_data = pd.concat(dfs, ignore_index=True)
+	noise_data.to_pickle(f"data/{experiment}_{label}.pkl")

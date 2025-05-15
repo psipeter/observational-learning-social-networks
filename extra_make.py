@@ -134,18 +134,31 @@ if experiment=='iti_noise':
 			rsh.write("\n")
 			rsh.write(run_string)
 
-if experiment=='weighting_error':
-	run_string = f"python weighting_error.py sid0 lambd0 neurons0"
-	file_string = f'extra.sh'
-	with open (file_string, 'w') as rsh:
-		rsh.write('''#!/bin/bash''')
-		rsh.write("\n")
-		rsh.write('''#SBATCH --mem=4G''')
-		rsh.write("\n")
-		rsh.write('''#SBATCH --nodes=1''')
-		rsh.write("\n")
-		rsh.write('''#SBATCH --ntasks-per-node=1''')
-		rsh.write("\n")
-		rsh.write('''#SBATCH --time=1:00:0''')
-		rsh.write("\n")
-		rsh.write(run_string)
+if experiment in ['weighting_error_lambd', 'weighting_error_neurons']:
+	n_sid = int(sys.argv[2])
+	if experiment=='weighting_error_lambd':
+		n_neurons = [int(sys.argv[3])]
+		lambdas = [int(arg) for arg in sys.argv[4:]]
+	if experiment=='weighting_error_neurons':
+		lambdas = [int(sys.argv[3])]
+		n_neurons = [int(arg) for arg in sys.argv[4:]]
+	sids = pd.read_pickle(f"data/yoo.pkl")['sid'].unique()[:n_sid]
+	n = 0
+	for sid in sids:
+		for neurons in n_neurons:
+			for lambd in lambdas:
+				n += 1
+				run_string = f"python weighting_error.py {sid} {lambd} {neurons}"
+				file_string = f'extra_{n}.sh'
+				with open (file_string, 'w') as rsh:
+					rsh.write('''#!/bin/bash''')
+					rsh.write("\n")
+					rsh.write('''#SBATCH --mem=4G''')
+					rsh.write("\n")
+					rsh.write('''#SBATCH --nodes=1''')
+					rsh.write("\n")
+					rsh.write('''#SBATCH --ntasks-per-node=1''')
+					rsh.write("\n")
+					rsh.write('''#SBATCH --time=1:00:0''')
+					rsh.write("\n")
+					rsh.write(run_string)
