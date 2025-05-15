@@ -22,7 +22,7 @@ print(f"sid {sid}, lambda {lambd}, neurons {n_neurons}")
 
 empirical = pd.read_pickle(f"data/{dataset}.pkl").query("sid==@sid")
 trials = empirical['trial'].unique() 
-columns = ['type', 'sid', 'trial', 'stage', 'lambda', 'n_neurons', 'error']
+columns = ['type', 'sid', 'trial', 'stage', 'lambda', 'n_neurons', 'relative_error']
 dfs = []
 W = np.zeros((1, n_neurons))
 for trial in trials[:20]:
