@@ -43,5 +43,5 @@ for trial in trials:
         relative_error = error / target
         dfs.append(pd.DataFrame([[model_type, sid, trial, stage, lambd, n_neurons, relative_error]], columns=columns))
 data = pd.concat(dfs, ignore_index=True)
-data.to_pickle(f"data/weighted_error_{sid}_{lambd}_{n_neurons}.pkl")
+data.to_pickle(f"data/weighting_error_{sid}_{lambd}_{n_neurons}.pkl")
 print(data)
