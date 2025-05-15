@@ -111,7 +111,7 @@ if experiment in ['weighting_error_lambd', 'weighting_error_neurons']:
 			for lambd in lambdas:
 				n += 1
 				try:
-					dfs.append(pd.read_pickle(f"weighted_error_{sid}_{lambd}_{neurons}.pkl.pkl"))
+					dfs.append(pd.read_pickle(f"weighted_error_{sid}_{lambd}_{neurons}.pkl"))
 				except:
 					print(f"missing sid {sid} neurons {neurons} lambda {lambd}")
 	noise_data = pd.concat(dfs, ignore_index=True)
