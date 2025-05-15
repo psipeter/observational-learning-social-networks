@@ -40,7 +40,8 @@ for trial in trials:
         weight = np.mean(sim.data[net.probe_weight][tidx-100: tidx])
         target = np.mean(sim.data[net.probe_target][tidx-100: tidx])
         error = np.abs(target - weight)
-        dfs.append(pd.DataFrame([[model_type, sid, trial, stage, lambd, n_neurons, error]], columns=columns))
+        relative_error = error / target
+        dfs.append(pd.DataFrame([[model_type, sid, trial, stage, lambd, n_neurons, relative_error]], columns=columns))
 data = pd.concat(dfs, ignore_index=True)
 data.to_pickle(f"data/weighted_error_{sid}_{lambd}_{n_neurons}.pkl")
 print(data)
