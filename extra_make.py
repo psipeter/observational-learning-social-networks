@@ -133,3 +133,19 @@ if experiment=='iti_noise':
 			rsh.write('''#SBATCH --time=1:00:0''')
 			rsh.write("\n")
 			rsh.write(run_string)
+
+if experiment=='weighting_error':
+	run_string = f"python weighting_error.py sid0 lambd0 neurons0"
+	file_string = f'extra.sh'
+	with open (file_string, 'w') as rsh:
+		rsh.write('''#!/bin/bash''')
+		rsh.write("\n")
+		rsh.write('''#SBATCH --mem=4G''')
+		rsh.write("\n")
+		rsh.write('''#SBATCH --nodes=1''')
+		rsh.write("\n")
+		rsh.write('''#SBATCH --ntasks-per-node=1''')
+		rsh.write("\n")
+		rsh.write('''#SBATCH --time=1:00:0''')
+		rsh.write("\n")
+		rsh.write(run_string)
